@@ -12,8 +12,6 @@ dirs = { workspace = true }
 nix = { workspace = true }
 libc = { workspace = true }
 tokio = { workspace = true }
-sysinfo = { workspace = true }
-freedesktop-desktop-entry = { workspace = true }
 
 [features]
 default = []

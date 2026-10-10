@@ -71,7 +71,7 @@ impl SmapsRollup {
 
 /// Per-process memory with an explicit provenance marker, so the UI can show "RSS" when
 /// the kernel would not give us a rollup.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ProcMemory {
     pub pss: u64,
     pub rss: u64,
