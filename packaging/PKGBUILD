@@ -1,0 +1,36 @@
+# Maintainer: Pulsar contributors
+pkgname=pulsar
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Fast, grouped Linux system monitor with honest memory and per-app power"
+arch=('x86_64' 'aarch64')
+url="https://github.com/pulsar/pulsar"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'libsoup3' 'hicolor-icon-theme')
+makedepends=('cargo' 'rust')
+provides=('pulsar')
+options=('!lto')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  cargo build --release --frozen --workspace
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 target/release/pulsar "$pkgdir/usr/bin/pulsar"
+
+  install -Dm644 packaging/pulsar.desktop "$pkgdir/usr/share/applications/pulsar.desktop"
+  install -Dm644 packaging/pulsar.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/pulsar.svg"
+  install -Dm644 packaging/99-pulsar-rapl.rules "$pkgdir/usr/share/pulsar/99-pulsar-rapl.rules"
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 app/assets/fonts/JetBrainsMono-OFL.txt \
+    "$pkgdir/usr/share/licenses/$pkgname/JetBrainsMono-OFL.txt"
+
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+  install -Dm644 docs/RECON.md "$pkgdir/usr/share/doc/$pkgname/RECON.md"
+  install -Dm644 docs/PERF.md "$pkgdir/usr/share/doc/$pkgname/PERF.md"
+}

@@ -1,0 +1,35 @@
+# Flatpak manifest for Pulsar. Build with:
+#   flatpak-builder --user --install --force-clean build-dir packaging/io.github.pulsar.Pulsar.yml
+# Networking/tools are intentionally minimal: Pulsar reads /proc and /sys and nothing else.
+app-id: io.github.pulsar.Pulsar
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: pulsar
+
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=session-bus
+  - --device=all
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/pulsar/cargo
+
+modules:
+  - name: pulsar
+    buildsystem: simple
+    build-commands:
+      - cargo build --release --offline
+      - install -Dm755 target/release/pulsar /app/bin/pulsar
+      - install -Dm644 packaging/pulsar.desktop /app/share/applications/pulsar.desktop
+      - install -Dm644 packaging/pulsar.svg /app/share/icons/hicolor/scalable/apps/pulsar.svg
+    sources:
+      - type: dir
+        path: ..

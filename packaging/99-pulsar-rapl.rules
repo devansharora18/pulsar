@@ -1,0 +1,13 @@
+# Make RAPL (and therefore real power measurement) readable without root.
+#
+# Since Linux 5.10 /sys/class/powercap/*/energy_uj is root-only. This grants read access to
+# the `wheel` group. Pulsar works without it (falling back to a utilisation x TDP model),
+# but with it the CPU power numbers are measured rather than modelled.
+#
+# Install:
+#   sudo cp packaging/99-pulsar-rapl.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger --subsystem-match=powercap
+# Or use Pulsar's built-in "Enable power metrics" button (runs this via pkexec).
+
+SUBSYSTEM=="powercap", ACTION=="add|change", RUN+="/bin/chgrp wheel /sys/class/powercap/intel-rapl:*/energy_uj", RUN+="/bin/chmod g+r /sys/class/powercap/intel-rapl:*/energy_uj"
+SUBSYSTEM=="powercap", ACTION=="add|change", RUN+="/bin/chgrp wheel /sys/class/powercap/intel-rapl:*/max_energy_range_uj", RUN+="/bin/chmod g+r /sys/class/powercap/intel-rapl:*/max_energy_range_uj"
