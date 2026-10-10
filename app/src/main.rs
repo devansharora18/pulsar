@@ -8,14 +8,25 @@ mod treemap;
 use dioxus::prelude::*;
 use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
 use pulsar_core::sampler::Sampler;
+use std::path::PathBuf;
 
 use components::overlays::Overlays;
 use components::sidebar::Sidebar;
 use components::titlebar::Titlebar;
 use components::views::Content;
-use state::{AppState, Pending, PendingKind, View, ViewMode};
+use state::{AppState, Cli, Pending, PendingKind, View, ViewMode, CLI};
 
 fn main() {
+    pulsar_core::theme::Theme::seed_user_themes();
+    let cli = parse_cli(std::env::args().skip(1));
+    let screenshot = cli.screenshot.clone();
+    let delay = cli.delay_secs.max(3);
+    let _ = CLI.set(cli);
+
+    if let Some(path) = screenshot {
+        spawn_capture(path, delay);
+    }
+
     let cfg = Config::new()
         .with_window(
             WindowBuilder::new()
@@ -27,6 +38,51 @@ fn main() {
         )
         .with_background_color((0, 0, 0, 0));
     dioxus::LaunchBuilder::desktop().with_cfg(cfg).launch(App);
+}
+
+fn parse_cli(args: impl Iterator<Item = String>) -> Cli {
+    let mut cli = Cli { delay_secs: 4, ..Default::default() };
+    let mut it = args.peekable();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--screenshot" => cli.screenshot = it.next().map(PathBuf::from),
+            "--theme" => cli.theme = it.next(),
+            "--view" => {
+                cli.view = it.next().and_then(|v| match v.as_str() {
+                    "overview" => Some(View::Overview),
+                    "processes" => Some(View::Processes),
+                    "memory" => Some(View::Memory),
+                    "power" => Some(View::Power),
+                    _ => None,
+                })
+            }
+            "--expand" => cli.expand = true,
+            "--delay" => cli.delay_secs = it.next().and_then(|v| v.parse().ok()).unwrap_or(4),
+            _ => {}
+        }
+    }
+    cli
+}
+
+/// In `--screenshot` mode, wait for the UI to populate, capture the screen, then exit.
+fn spawn_capture(path: PathBuf, delay_secs: u64) {
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(delay_secs));
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let on_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+        let status = if on_wayland {
+            std::process::Command::new("grim").arg(&path).status()
+        } else {
+            std::process::Command::new("import").args(["-window", "root"]).arg(&path).status()
+        };
+        match status {
+            Ok(s) if s.success() => eprintln!("pulsar: captured {path:?}"),
+            other => eprintln!("pulsar: capture failed ({other:?}); install grim (wayland) or imagemagick (x11)"),
+        }
+        std::process::exit(0);
+    });
 }
 
 #[component]
@@ -45,6 +101,18 @@ fn App() -> Element {
                 let snap = rx.borrow_and_update().clone();
                 let mut s = state.snapshot;
                 s.set(snap);
+                // In screenshot mode, reveal a few groups so the capture shows expansion.
+                if CLI.get().map(|c| c.expand).unwrap_or(false) && state.expanded.read().is_empty() {
+                    let snap = state.snapshot.read();
+                    let keys: Vec<String> =
+                        snap.groups.iter().take(4).map(|g| g.key.clone()).collect();
+                    drop(snap);
+                    let mut e = state.expanded;
+                    let mut set = e.write();
+                    for k in keys {
+                        set.insert(k);
+                    }
+                }
             }
         }
     });

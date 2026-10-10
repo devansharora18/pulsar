@@ -1,0 +1,30 @@
+# "pywal" is special: Pulsar reads ~/.cache/wal/colors.json and re-colours live whenever
+# that file changes. This file documents the mapping and is NOT read directly. To use a
+# static pywal snapshot, copy the values you want into your own theme file instead.
+name = "pywal"
+# background   = colors.json: background
+# bg_alt       = colors.json: color0
+# fg           = colors.json: foreground
+# fg_dim       = colors.json: color8
+# border       = colors.json: color0
+# accent/blue  = colors.json: color4
+# green        = colors.json: color2
+# yellow       = colors.json: color3
+# orange       = colors.json: color9
+# red          = colors.json: color1
+# magenta      = colors.json: color5
+# cyan         = colors.json: color6
+bg = "#1a1a1a"
+bg_alt = "#0f0f0f"
+fg = "#eeeeee"
+fg_dim = "#888888"
+border = "#2a2a2a"
+accent = "#5f87af"
+green = "#87af87"
+yellow = "#afaf5f"
+orange = "#af875f"
+red = "#af5f5f"
+blue = "#5f87af"
+magenta = "#af87af"
+cyan = "#5fafaf"
+is_light = false

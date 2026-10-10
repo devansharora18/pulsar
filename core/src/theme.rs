@@ -118,6 +118,25 @@ impl Theme {
         crate::config::Config::config_dir().join("themes")
     }
 
+    /// Write any missing built-in theme TOML files into the user theme directory so they
+    /// can be tweaked. Existing files are never overwritten.
+    pub fn seed_user_themes() {
+        let dir = Self::theme_dir();
+        let _ = std::fs::create_dir_all(&dir);
+        for name in Self::builtin_names() {
+            if *name == "pywal" {
+                continue;
+            }
+            let path = dir.join(format!("{name}.toml"));
+            if path.exists() {
+                continue;
+            }
+            if let Some(t) = Self::builtin(name) {
+                let _ = std::fs::write(path, t.to_toml());
+            }
+        }
+    }
+
     /// Resolve a theme name: user theme file → builtin → default.
     pub fn resolve(name: &str) -> Theme {
         if name.eq_ignore_ascii_case("pywal") {
@@ -246,5 +265,22 @@ mod tests {
     fn unknown_theme_falls_back() {
         let t = Theme::resolve("definitely-not-a-theme");
         assert_eq!(t.name, Theme::default().name);
+    }
+
+    #[test]
+    fn shipped_theme_files_parse() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../themes");
+        let mut count = 0;
+        for entry in std::fs::read_dir(&dir).expect("themes dir") {
+            let p = entry.unwrap().path();
+            if p.extension().and_then(|e| e.to_str()) != Some("toml") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&p).unwrap();
+            let parsed = Theme::from_toml(&text);
+            assert!(parsed.is_some(), "failed to parse {p:?}");
+            count += 1;
+        }
+        assert!(count >= 7, "expected 6 builtins + pywal, found {count}");
     }
 }

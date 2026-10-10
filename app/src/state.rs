@@ -1,6 +1,8 @@
 //! Shared UI state: signals for the snapshot, view, filters and pending actions.
 
 use std::collections::HashSet;
+use std::path::PathBuf;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use dioxus::prelude::*;
@@ -110,6 +112,18 @@ pub struct Pending {
     pub pids: Vec<i32>,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Cli {
+    pub screenshot: Option<PathBuf>,
+    pub theme: Option<String>,
+    pub view: Option<View>,
+    pub expand: bool,
+    pub delay_secs: u64,
+}
+
+/// Parsed command line, set once in `main`.
+pub static CLI: OnceLock<Cli> = OnceLock::new();
+
 #[derive(Clone, Copy)]
 pub struct AppState {
     pub snapshot: Signal<SystemSnapshot>,
@@ -139,14 +153,19 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        let config = Config::load();
+        let cli = CLI.get();
+        let mut config = Config::load();
+        if let Some(t) = cli.and_then(|c| c.theme.clone()) {
+            config.theme = t;
+        }
         let theme = Theme::resolve(&config.theme);
         let hide_kernel = config.hide_kernel_threads;
+        let initial_view = cli.and_then(|c| c.view).unwrap_or(View::Overview);
         AppState {
             snapshot: Signal::new(SystemSnapshot::default()),
             config: Signal::new(config),
             theme: Signal::new(theme),
-            view: Signal::new(View::Overview),
+            view: Signal::new(initial_view),
             search: Signal::new(String::new()),
             search_open: Signal::new(false),
             sort: Signal::new(SortKey::Pss),
