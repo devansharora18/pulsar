@@ -90,6 +90,9 @@ pub struct CpuSnapshot {
     pub load5: f64,
     pub load15: f64,
     pub model: String,
+    /// Total jiffies elapsed system-wide since the previous sample (attribution denominator).
+    pub total_delta: u64,
+    pub idle_delta: u64,
 }
 
 /// Keeps previous `/proc/stat` counters so it can report deltas.
@@ -114,15 +117,19 @@ impl CpuCollector {
 
         let mut cores = Vec::new();
         let mut overall = 0.0;
+        let mut total_delta = 0;
+        let mut idle_delta = 0;
         for (i, (label, cur)) in rows.iter().enumerate() {
-            let usage = if let Some(prev) = self.prev.get(i) {
+            let (usage, t, idle) = if let Some(prev) = self.prev.get(i) {
                 let (t, idle) = cur.delta(prev);
-                usage_from_delta(t, idle)
+                (usage_from_delta(t, idle), t, idle)
             } else {
-                0.0
+                (0.0, 0, 0)
             };
             if label == "cpu" {
                 overall = usage;
+                total_delta = t;
+                idle_delta = idle;
                 continue;
             }
             let idx: usize = label.strip_prefix("cpu").and_then(|s| s.parse().ok()).unwrap_or(0);
@@ -141,6 +148,8 @@ impl CpuCollector {
             load5: l5,
             load15: l15,
             model: self.model.clone(),
+            total_delta,
+            idle_delta,
         }
     }
 }
