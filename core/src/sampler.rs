@@ -75,6 +75,9 @@ pub struct Sampler {
     history: History,
     /// pid → (starttime, cumulative cpu ticks) from the previous tick.
     prev_ticks: HashMap<i32, (u64, u64)>,
+    /// Cached per-pid memory/io, refreshed on a rotating schedule.
+    mem_cache: HashMap<i32, crate::pss::ProcMemory>,
+    io_cache: HashMap<i32, IoCounters>,
     seq: u64,
     clock_ticks: u64,
     page_size: u64,
@@ -99,6 +102,8 @@ impl Sampler {
             cache: PidCache::default(),
             history,
             prev_ticks: HashMap::new(),
+            mem_cache: HashMap::new(),
+            io_cache: HashMap::new(),
             seq: 0,
             clock_ticks,
             page_size,
@@ -132,17 +137,26 @@ impl Sampler {
         let net = self.net.sample(dt);
         let disks = self.disk.sample(dt);
 
+        // `smaps_rollup` and `/proc/<pid>/io` are relatively expensive; reading them for
+        // every process every tick dominated the sampler's cost on large process counts.
+        // Refresh them for a rotating slice each tick (each process every `detail_every`
+        // ticks), while the cheap `/proc/<pid>/stat` keeps row CPU and RSS live.
         let pids = read_pids();
+        let detail_every = (pids.len() / 40).clamp(1, 24);
+        let rotation = (self.seq as usize) % detail_every;
+
         let mut processes: Vec<ProcSample> = Vec::with_capacity(pids.len());
         let mut new_ticks: HashMap<i32, (u64, u64)> = HashMap::with_capacity(pids.len());
         let mut alive: HashSet<i32> = HashSet::with_capacity(pids.len());
 
-        for pid in pids {
+        for (idx, pid) in pids.into_iter().enumerate() {
             let Ok(stat) = Stat::parse(&read_file(format!("/proc/{pid}/stat"))) else {
                 continue;
             };
             alive.insert(pid);
             let cached = self.cache.get_or_read(pid, stat.starttime).clone();
+            // Kernel threads have no user memory; do not spend a rollup read on them.
+            let kernel_thread = cached.exe.is_none() && cached.cmdline.is_none();
 
             let prev = self
                 .prev_ticks
@@ -157,9 +171,25 @@ impl Sampler {
             let power_w = attribute_watts(power.cpu_dynamic_w, proc_delta, cpu.total_delta);
 
             let rss_fallback = (stat.rss_pages.max(0) as u64) * self.page_size / 1024;
-            let status = Status::read(pid).unwrap_or_default();
-            let mem_pm = ProcMemory::read(pid, rss_fallback, status.vmswap);
-            let io = IoCounters::read(pid).unwrap_or_default();
+            let detailed = !kernel_thread
+                && (idx % detail_every == rotation || !self.mem_cache.contains_key(&pid));
+            let mem_pm = if detailed {
+                let pm = ProcMemory::read(pid, rss_fallback, 0);
+                self.mem_cache.insert(pid, pm);
+                self.io_cache
+                    .insert(pid, IoCounters::read(pid).unwrap_or_default());
+                pm
+            } else {
+                let mut pm = *self.mem_cache.get(&pid).unwrap_or(&ProcMemory::default());
+                pm.rss = rss_fallback;
+                // Fallback (non-rollup) processes track RSS directly.
+                if !pm.from_rollup {
+                    pm.pss = rss_fallback;
+                    pm.uss = 0;
+                }
+                pm
+            };
+            let io = *self.io_cache.get(&pid).unwrap_or(&IoCounters::default());
 
             processes.push(ProcSample {
                 pid,
@@ -184,6 +214,8 @@ impl Sampler {
         let sum_pss: u64 = processes.iter().map(|p| p.mem.pss).sum();
 
         self.cache.retain(&alive);
+        self.mem_cache.retain(|pid, _| alive.contains(pid));
+        self.io_cache.retain(|pid, _| alive.contains(pid));
         self.prev_ticks = new_ticks;
 
         // History.

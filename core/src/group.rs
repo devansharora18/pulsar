@@ -347,12 +347,10 @@ mod tests {
     fn index() -> DesktopIndex {
         let zen = "[Desktop Entry]\nName=Zen Browser\nExec=/usr/bin/flatpak run app.zen_browser.zen\nIcon=app.zen_browser.zen\nStartupWMClass=zen\nType=Application\n";
         let ff = "[Desktop Entry]\nName=Firefox\nExec=/usr/lib64/firefox/firefox %u\nIcon=firefox\nType=Application\n";
-        DesktopIndex {
-            entries: vec![
-                DesktopEntry::parse(zen, "app.zen_browser.zen", std::path::Path::new("t")).unwrap(),
-                DesktopEntry::parse(ff, "firefox", std::path::Path::new("t")).unwrap(),
-            ],
-        }
+        DesktopIndex::from_entries(vec![
+            DesktopEntry::parse(zen, "app.zen_browser.zen", std::path::Path::new("t")).unwrap(),
+            DesktopEntry::parse(ff, "firefox", std::path::Path::new("t")).unwrap(),
+        ])
     }
 
     #[test]

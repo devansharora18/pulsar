@@ -116,13 +116,38 @@ fn basename(p: &str) -> Option<String> {
     }
 }
 
-/// An index of installed desktop entries used to resolve names and icons.
+/// An index of installed desktop entries used to resolve names and icons. Lookups are O(1)
+/// via prebuilt maps, because they run for every process on every tick.
 #[derive(Debug, Clone, Default)]
 pub struct DesktopIndex {
     pub entries: Vec<DesktopEntry>,
+    by_id: std::collections::HashMap<String, usize>,
+    by_wmclass: std::collections::HashMap<String, usize>,
+    by_exec: std::collections::HashMap<String, usize>,
 }
 
 impl DesktopIndex {
+    pub fn from_entries(entries: Vec<DesktopEntry>) -> Self {
+        let mut by_id = std::collections::HashMap::new();
+        let mut by_wmclass = std::collections::HashMap::new();
+        let mut by_exec = std::collections::HashMap::new();
+        for (i, e) in entries.iter().enumerate() {
+            by_id.entry(e.id.to_ascii_lowercase()).or_insert(i);
+            if let Some(w) = &e.wm_class {
+                by_wmclass.entry(w.to_ascii_lowercase()).or_insert(i);
+            }
+            for n in &e.exec_names {
+                by_exec.entry(n.to_ascii_lowercase()).or_insert(i);
+            }
+        }
+        DesktopIndex {
+            entries,
+            by_id,
+            by_wmclass,
+            by_exec,
+        }
+    }
+
     pub fn load_default() -> Self {
         let mut dirs: Vec<PathBuf> = Vec::new();
         for base in [
@@ -181,48 +206,34 @@ impl DesktopIndex {
                 }
             }
         }
-        DesktopIndex { entries }
+        DesktopIndex::from_entries(entries)
     }
 
     /// Match an application id coming from a cgroup scope or a WM class.
     pub fn match_app_id(&self, app_id: &str) -> Option<&DesktopEntry> {
         let needle = app_id.to_ascii_lowercase();
+        if let Some(&i) = self.by_id.get(&needle) {
+            return self.entries.get(i);
+        }
+        if let Some(&i) = self.by_wmclass.get(&needle) {
+            return self.entries.get(i);
+        }
+        // Suffix match (e.g. `app-<id>` scope whose id is only part of the desktop id).
         self.entries
             .iter()
-            .find(|e| e.id.to_ascii_lowercase() == needle)
-            .or_else(|| {
-                self.entries.iter().find(|e| {
-                    e.wm_class
-                        .as_deref()
-                        .map(|w| w.eq_ignore_ascii_case(app_id))
-                        .unwrap_or(false)
-                })
-            })
-            .or_else(|| {
-                self.entries
-                    .iter()
-                    .find(|e| e.id.to_ascii_lowercase().ends_with(&needle))
-            })
+            .find(|e| e.id.to_ascii_lowercase().ends_with(&needle))
     }
 
     /// Match an executable basename to an entry via `Exec` or `StartupWMClass`.
     pub fn match_exe(&self, exe_basename: &str) -> Option<&DesktopEntry> {
         let needle = exe_basename.to_ascii_lowercase();
-        self.entries
-            .iter()
-            .find(|e| {
-                e.exec_names
-                    .iter()
-                    .any(|n| n.to_ascii_lowercase() == needle)
-            })
-            .or_else(|| {
-                self.entries.iter().find(|e| {
-                    e.wm_class
-                        .as_deref()
-                        .map(|w| w.to_ascii_lowercase() == needle)
-                        .unwrap_or(false)
-                })
-            })
+        if let Some(&i) = self.by_exec.get(&needle) {
+            return self.entries.get(i);
+        }
+        if let Some(&i) = self.by_wmclass.get(&needle) {
+            return self.entries.get(i);
+        }
+        None
     }
 }
 
@@ -262,9 +273,10 @@ mod tests {
 
     #[test]
     fn index_matches_by_app_id_and_exe() {
-        let index = DesktopIndex {
-            entries: vec![entry("app.zen_browser.zen", ZEN), entry("firefox", FF)],
-        };
+        let index = DesktopIndex::from_entries(vec![
+            entry("app.zen_browser.zen", ZEN),
+            entry("firefox", FF),
+        ]);
         assert_eq!(
             index.match_app_id("app.zen_browser.zen").unwrap().name,
             "Zen Browser"
