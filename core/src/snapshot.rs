@@ -32,6 +32,8 @@ pub struct SystemSnapshot {
     pub proc_count: usize,
     /// The RAPL capability probe result (for the "Enable power metrics" affordance).
     pub rapl_readable: bool,
+    /// Rolling system-level series for the overview sparklines.
+    pub series: SeriesView,
 }
 
 impl Default for SystemSnapshot {
@@ -52,6 +54,7 @@ impl Default for SystemSnapshot {
             sum_pss: 0,
             proc_count: 0,
             rapl_readable: false,
+            series: SeriesView::default(),
         }
     }
 }

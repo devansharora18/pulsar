@@ -75,7 +75,7 @@ pub fn usage_from_delta(total_delta: u64, idle_delta: u64) -> f64 {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 pub struct CoreSample {
     pub usage_pct: f64,
     pub freq_mhz: Option<u64>,

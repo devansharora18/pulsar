@@ -21,7 +21,7 @@ use crate::power::{attribute_watts, PowerSampler};
 use crate::pressure::Pressure;
 use crate::process::{self, IoCounters, Stat, Status};
 use crate::pss::ProcMemory;
-use crate::snapshot::SystemSnapshot;
+use crate::snapshot::{SeriesView, SystemSnapshot};
 
 #[derive(Debug, Clone)]
 struct CachedProc {
@@ -201,6 +201,27 @@ impl Sampler {
             self.history.push_group_power(&g.key, g.power_w);
         }
         self.history.retain_groups(&group_keys);
+        for g in &mut groups {
+            g.spark = self
+                .history
+                .group_power
+                .get(&g.key)
+                .map(|r| r.iter().collect())
+                .unwrap_or_default();
+        }
+        let series = SeriesView {
+            cpu: self.history.cpu.iter().collect(),
+            mem_used: self.history.mem_used.iter().collect(),
+            mem_cache: self.history.mem_cache.iter().collect(),
+            swap: self.history.swap.iter().collect(),
+            power: self.history.power.iter().collect(),
+            net_rx: self.history.net_rx.iter().collect(),
+            net_tx: self.history.net_tx.iter().collect(),
+            disk_read: self.history.disk_read.iter().collect(),
+            disk_write: self.history.disk_write.iter().collect(),
+            cpu_temp: self.history.cpu_temp.iter().collect(),
+            gpu_temp: self.history.gpu_temp.iter().collect(),
+        };
 
         SystemSnapshot {
             seq: self.seq,
@@ -218,6 +239,7 @@ impl Sampler {
             groups,
             sum_pss,
             rapl_readable: self.rapl_readable,
+            series,
         }
     }
 

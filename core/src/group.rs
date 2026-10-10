@@ -17,7 +17,7 @@ use crate::process::IoCounters;
 use crate::pss::ProcMemory;
 
 /// One process as collected for a single tick.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ProcSample {
     pub pid: i32,
     pub ppid: i32,
@@ -62,7 +62,7 @@ pub enum GroupKind {
     Tree,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct GroupMeta {
     pub name: String,
     pub icon: Option<String>,
@@ -78,7 +78,7 @@ pub struct Assigned {
 }
 
 /// The aggregated view the UI renders (one expandable row).
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Group {
     pub key: String,
     pub name: String,
@@ -94,6 +94,9 @@ pub struct Group {
     pub io_write: u64,
     pub power_w: f64,
     pub is_kernel: bool,
+    /// Rolling power history for the row sparkline.
+    #[serde(default)]
+    pub spark: Vec<f64>,
 }
 
 impl Group {
