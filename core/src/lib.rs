@@ -5,8 +5,10 @@ pub mod desktop;
 pub mod error;
 pub mod group;
 pub mod meminfo;
+pub mod power;
 pub mod pressure;
 pub mod process;
 pub mod pss;
+pub mod rapl;
 
 pub use error::{Error, Result};
