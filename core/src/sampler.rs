@@ -23,7 +23,7 @@ use crate::process::{self, IoCounters, Stat, Status};
 use crate::pss::ProcMemory;
 use crate::snapshot::{SeriesView, SystemSnapshot};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct CachedProc {
     starttime: u64,
     exe: Option<String>,
@@ -38,7 +38,7 @@ struct PidCache {
 }
 
 impl PidCache {
-    fn get_or_read(&mut self, pid: i32, starttime: u64) -> &CachedProc {
+    fn get_or_read(&mut self, pid: i32, starttime: u64) -> CachedProc {
         let needs = self
             .map
             .get(&pid)
@@ -55,8 +55,9 @@ impl PidCache {
             };
             self.map.insert(pid, c);
         }
-        // The entry was just inserted when needed.
-        self.map.get(&pid).expect("cache populated")
+        // Reader can only be missing if `pid` vanished between the insert and here; the
+        // default (no exe/cmdline) degrades gracefully instead of panicking.
+        self.map.get(&pid).cloned().unwrap_or_default()
     }
 
     fn retain(&mut self, alive: &HashSet<i32>) {
@@ -154,7 +155,7 @@ impl Sampler {
                 continue;
             };
             alive.insert(pid);
-            let cached = self.cache.get_or_read(pid, stat.starttime).clone();
+            let cached = self.cache.get_or_read(pid, stat.starttime);
             // Kernel threads have no user memory; do not spend a rollup read on them.
             let kernel_thread = cached.exe.is_none() && cached.cmdline.is_none();
 

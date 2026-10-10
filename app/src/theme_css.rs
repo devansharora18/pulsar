@@ -38,6 +38,7 @@ pub fn theme_css(theme: &Theme, config: &Config) -> String {
   --font-size: {font_size}px;
   --row-h: {row_h};
   --opacity: {opacity};
+  --blur: {blur}px;
   --is-light: {is_light};
 }}",
         bg = theme.bg,
@@ -61,6 +62,7 @@ pub fn theme_css(theme: &Theme, config: &Config) -> String {
         font_size = config.font_size,
         row_h = density_row,
         opacity = config.opacity,
+        blur = if config.blur { 16 } else { 0 },
         is_light = if theme.is_light { 1 } else { 0 },
     )
 }

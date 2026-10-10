@@ -81,6 +81,7 @@ body {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: hidden;
+  backdrop-filter: blur(var(--blur));
 }
 
 .titlebar {

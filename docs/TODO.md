@@ -84,3 +84,13 @@ The WebKitGTK webview alone is ~150 MB, which is the floor for a Dioxus-desktop 
 ## 6. ARM packaging
 
 The `PKGBUILD` lists `aarch64` but no ARM build was performed here.
+
+## 7. Smaller polish gaps
+
+- Process-table **virtualization** for > 200 rows: group mode renders ≤ ~150 rows, but flat
+  mode with 400+ processes renders up to 400 rows (capped). Windowing would help only on
+  very large flat lists.
+- Per-group **energy since launch (Wh)** in the row tooltip: system Wh is shown in the Power
+  view; per-group Wh would need a per-group energy accumulator in the sampler.
+- Reclaim actions show current numbers; an explicit before/after pair could be captured
+  around the privileged call.
