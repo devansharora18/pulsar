@@ -470,6 +470,30 @@ mod tests {
     }
 
     #[test]
+    fn ordering_is_stable_under_ties() {
+        // Same rule the UI uses: sort by PSS desc, tie-break by key so rows never swap
+        // when values are equal.
+        let s = vec![
+            sample(600, 1, "alpha", Some("/x/alpha"), None),
+            sample(601, 1, "beta", Some("/x/beta"), None),
+            sample(602, 1, "gamma", Some("/x/gamma"), None),
+        ];
+        let assigned = assign_groups(&s, &DesktopIndex::default());
+        let mut groups = build_groups(&assigned, &s);
+        let sort = |g: &mut Vec<Group>| {
+            g.sort_by(|a, b| b.pss.cmp(&a.pss).then_with(|| a.key.cmp(&b.key)));
+        };
+        sort(&mut groups);
+        let order1: Vec<String> = groups.iter().map(|g| g.key.clone()).collect();
+        // Shuffle the input and re-sort; the order must be identical.
+        let mut groups2 = build_groups(&assigned, &s);
+        groups2.reverse();
+        sort(&mut groups2);
+        let order2: Vec<String> = groups2.iter().map(|g| g.key.clone()).collect();
+        assert_eq!(order1, order2);
+    }
+
+    #[test]
     fn group_aggregates_sums() {
         let s = vec![
             sample(500, 1, "opencode", Some("/x/opencode"), None),
