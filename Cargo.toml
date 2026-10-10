@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["core", "app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Pulsar contributors"]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = "1"
+dirs = "7"
+nix = { version = "0.31", features = ["signal", "process", "resource", "user"] }
+libc = "0.2"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "fs", "macros"] }
+sysinfo = "0.39"
+procfs = "0.18"
+freedesktop-desktop-entry = "0.8"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"

@@ -1,0 +1,20 @@
+[package]
+name = "pulsar-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Data collection, models and parsers for Pulsar, a Linux system monitor."
+
+[dependencies]
+serde = { workspace = true }
+toml = { workspace = true }
+dirs = { workspace = true }
+nix = { workspace = true }
+libc = { workspace = true }
+tokio = { workspace = true }
+sysinfo = { workspace = true }
+freedesktop-desktop-entry = { workspace = true }
+
+[features]
+default = []
+nvidia = []
