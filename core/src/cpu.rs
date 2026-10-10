@@ -132,7 +132,10 @@ impl CpuCollector {
                 idle_delta = idle;
                 continue;
             }
-            let idx: usize = label.strip_prefix("cpu").and_then(|s| s.parse().ok()).unwrap_or(0);
+            let idx: usize = label
+                .strip_prefix("cpu")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
             cores.push(CoreSample {
                 usage_pct: usage * 100.0,
                 freq_mhz: read_freq_mhz(idx),
@@ -157,7 +160,8 @@ impl CpuCollector {
 pub fn read_loadavg() -> (f64, f64, f64) {
     let text = std::fs::read_to_string("/proc/loadavg").unwrap_or_default();
     let mut it = text.split_whitespace();
-    let g = |it: &mut std::str::SplitWhitespace| it.next().and_then(|x| x.parse().ok()).unwrap_or(0.0);
+    let g =
+        |it: &mut std::str::SplitWhitespace| it.next().and_then(|x| x.parse().ok()).unwrap_or(0.0);
     (g(&mut it), g(&mut it), g(&mut it))
 }
 
@@ -209,8 +213,16 @@ intr 12345
 
     #[test]
     fn usage_from_two_snapshots() {
-        let a = CpuTimes { idle: 100, system: 100, ..Default::default() };
-        let b = CpuTimes { idle: 150, system: 150, ..Default::default() };
+        let a = CpuTimes {
+            idle: 100,
+            system: 100,
+            ..Default::default()
+        };
+        let b = CpuTimes {
+            idle: 150,
+            system: 150,
+            ..Default::default()
+        };
         let (t, idle) = b.delta(&a);
         assert_eq!(t, 100);
         assert_eq!(idle, 50);

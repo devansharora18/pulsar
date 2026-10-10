@@ -73,8 +73,14 @@ mod tests {
     fn css_contains_all_tokens() {
         let css = theme_css(&Theme::default(), &Config::default());
         for token in [
-            "--bg:", "--fg:", "--accent:", "--border:", "--radius:", "--font-size:",
-            "--row-h:", "--accent-glow:",
+            "--bg:",
+            "--fg:",
+            "--accent:",
+            "--border:",
+            "--radius:",
+            "--font-size:",
+            "--row-h:",
+            "--accent-glow:",
         ] {
             assert!(css.contains(token), "missing {token}");
         }
@@ -84,10 +90,15 @@ mod tests {
 
     #[test]
     fn density_switches_row_height() {
-        let mut c = Config::default();
-        c.density = Density::Compact;
+        let c = Config {
+            density: Density::Compact,
+            ..Default::default()
+        };
         assert!(theme_css(&Theme::default(), &c).contains("--row-h: 24px"));
-        c.density = Density::Comfy;
+        let c = Config {
+            density: Density::Comfy,
+            ..Default::default()
+        };
         assert!(theme_css(&Theme::default(), &c).contains("--row-h: 30px"));
     }
 

@@ -114,16 +114,45 @@ impl Group {
 }
 
 const BROWSER_ROOTS: &[&str] = &[
-    "zen", "zen-bin", "firefox", "firefox-bin", "chrome", "google-chrome", "chromium",
-    "chromium-browser", "brave", "brave-browser", "msedge", "microsoft-edge", "vivaldi",
-    "librewolf", "floorp",
+    "zen",
+    "zen-bin",
+    "firefox",
+    "firefox-bin",
+    "chrome",
+    "google-chrome",
+    "chromium",
+    "chromium-browser",
+    "brave",
+    "brave-browser",
+    "msedge",
+    "microsoft-edge",
+    "vivaldi",
+    "librewolf",
+    "floorp",
 ];
 
 const BROWSER_CHILD_COMMS: &[&str] = &[
-    "Web Content", "WebExtensions", "Privileged Content", "Privileged Cont", "RDD Process",
-    "Socket Process", "GPU Process", "Isolated Web Co", "Isolated Web Content",
-    "Isolated Service", "Utility Process", "Renderer", "PPAPI Process", "Chrome_ChildIOT",
-    "Chrome_IOThread", "gpu-process", "utility", "tab", "socket", "rdd", "forkserver",
+    "Web Content",
+    "WebExtensions",
+    "Privileged Content",
+    "Privileged Cont",
+    "RDD Process",
+    "Socket Process",
+    "GPU Process",
+    "Isolated Web Co",
+    "Isolated Web Content",
+    "Isolated Service",
+    "Utility Process",
+    "Renderer",
+    "PPAPI Process",
+    "Chrome_ChildIOT",
+    "Chrome_IOThread",
+    "gpu-process",
+    "utility",
+    "tab",
+    "socket",
+    "rdd",
+    "forkserver",
 ];
 
 fn is_browser_root_basename(base: &str) -> bool {
@@ -137,12 +166,20 @@ pub fn base_key(s: &ProcSample, index: &DesktopIndex) -> (String, GroupMeta) {
         if let Some(e) = index.match_app_id(app_id) {
             return (
                 app_id.clone(),
-                GroupMeta { name: e.name.clone(), icon: e.icon.clone(), kind: GroupKind::App },
+                GroupMeta {
+                    name: e.name.clone(),
+                    icon: e.icon.clone(),
+                    kind: GroupKind::App,
+                },
             );
         }
         return (
             app_id.clone(),
-            GroupMeta { name: pretty_app_id(app_id), icon: None, kind: GroupKind::App },
+            GroupMeta {
+                name: pretty_app_id(app_id),
+                icon: None,
+                kind: GroupKind::App,
+            },
         );
     }
     // 2b: desktop entry by executable basename.
@@ -150,11 +187,22 @@ pub fn base_key(s: &ProcSample, index: &DesktopIndex) -> (String, GroupMeta) {
     if let Some(e) = index.match_exe(&base) {
         return (
             base.clone(),
-            GroupMeta { name: e.name.clone(), icon: e.icon.clone(), kind: GroupKind::App },
+            GroupMeta {
+                name: e.name.clone(),
+                icon: e.icon.clone(),
+                kind: GroupKind::App,
+            },
         );
     }
     // 3: executable basename.
-    (base.clone(), GroupMeta { name: base, icon: None, kind: GroupKind::Exe })
+    (
+        base.clone(),
+        GroupMeta {
+            name: base,
+            icon: None,
+            kind: GroupKind::Exe,
+        },
+    )
 }
 
 /// Assign every process to a group key, applying browser-child folding.
@@ -167,7 +215,10 @@ pub fn assign_groups(samples: &[ProcSample], index: &DesktopIndex) -> Vec<Assign
 
     let mut out = Vec::with_capacity(samples.len());
     for s in samples {
-        let (mut key, mut meta) = resolved.get(&s.pid).cloned().unwrap_or_else(|| base_key(s, index));
+        let (mut key, mut meta) = resolved
+            .get(&s.pid)
+            .cloned()
+            .unwrap_or_else(|| base_key(s, index));
 
         if is_browser_child(s) {
             if let Some(root) = browser_root_ancestor(s, &by_pid) {
@@ -178,13 +229,20 @@ pub fn assign_groups(samples: &[ProcSample], index: &DesktopIndex) -> Vec<Assign
             }
         }
 
-        out.push(Assigned { pid: s.pid, key, meta });
+        out.push(Assigned {
+            pid: s.pid,
+            key,
+            meta,
+        });
     }
     out
 }
 
 fn is_browser_child(s: &ProcSample) -> bool {
-    if BROWSER_CHILD_COMMS.iter().any(|c| c.eq_ignore_ascii_case(&s.comm)) {
+    if BROWSER_CHILD_COMMS
+        .iter()
+        .any(|c| c.eq_ignore_ascii_case(&s.comm))
+    {
         return true;
     }
     // A browser-root exe that is not the topmost of its name (i.e. a child helper).
@@ -198,7 +256,9 @@ fn browser_root_ancestor(s: &ProcSample, by_pid: &HashMap<i32, &ProcSample>) -> 
     let mut guard = 0;
     while cur > 1 && guard < 64 {
         guard += 1;
-        let Some(parent) = by_pid.get(&cur) else { break };
+        let Some(parent) = by_pid.get(&cur) else {
+            break;
+        };
         if is_browser_root_basename(&parent.exe_basename()) {
             return Some(parent.pid);
         }
@@ -212,7 +272,9 @@ pub fn build_groups(assigned: &[Assigned], samples: &[ProcSample]) -> Vec<Group>
     let by_pid: HashMap<i32, &ProcSample> = samples.iter().map(|s| (s.pid, s)).collect();
     let mut map: HashMap<String, Group> = HashMap::new();
     for a in assigned {
-        let Some(s) = by_pid.get(&a.pid) else { continue };
+        let Some(s) = by_pid.get(&a.pid) else {
+            continue;
+        };
         let g = map.entry(a.key.clone()).or_insert_with(|| Group {
             key: a.key.clone(),
             name: a.meta.name.clone(),
@@ -251,7 +313,13 @@ mod tests {
     use super::*;
     use crate::desktop::DesktopEntry;
 
-    fn sample(pid: i32, ppid: i32, comm: &str, exe: Option<&str>, app_id: Option<&str>) -> ProcSample {
+    fn sample(
+        pid: i32,
+        ppid: i32,
+        comm: &str,
+        exe: Option<&str>,
+        app_id: Option<&str>,
+    ) -> ProcSample {
         ProcSample {
             pid,
             ppid,
@@ -262,7 +330,14 @@ mod tests {
             app_id: app_id.map(str::to_string),
             uid: 1000,
             threads: 1,
-            mem: ProcMemory { pss: 100, rss: 200, uss: 50, shared: 100, swap: 0, from_rollup: true },
+            mem: ProcMemory {
+                pss: 100,
+                rss: 200,
+                uss: 50,
+                shared: 100,
+                swap: 0,
+                from_rollup: true,
+            },
             io: IoCounters::default(),
             cpu_pct: 1.0,
             power_w: 0.1,
@@ -283,9 +358,27 @@ mod tests {
     #[test]
     fn zen_children_fold_into_one_app_group() {
         let s = vec![
-            sample(100, 1, "zen", Some("/app/zen/zen"), Some("app.zen_browser.zen")),
-            sample(101, 100, "Web Content", Some("/app/zen/zen"), Some("app.zen_browser.zen")),
-            sample(102, 100, "Isolated Web Co", Some("/app/zen/zen"), Some("app.zen_browser.zen")),
+            sample(
+                100,
+                1,
+                "zen",
+                Some("/app/zen/zen"),
+                Some("app.zen_browser.zen"),
+            ),
+            sample(
+                101,
+                100,
+                "Web Content",
+                Some("/app/zen/zen"),
+                Some("app.zen_browser.zen"),
+            ),
+            sample(
+                102,
+                100,
+                "Isolated Web Co",
+                Some("/app/zen/zen"),
+                Some("app.zen_browser.zen"),
+            ),
         ];
         let idx = index();
         let assigned = assign_groups(&s, &idx);
@@ -299,8 +392,20 @@ mod tests {
     #[test]
     fn two_opencode_processes_become_one_row() {
         let s = vec![
-            sample(200, 1, "opencode", Some("/home/u/.opencode/bin/opencode"), None),
-            sample(201, 1, "opencode", Some("/home/u/.opencode/bin/opencode"), None),
+            sample(
+                200,
+                1,
+                "opencode",
+                Some("/home/u/.opencode/bin/opencode"),
+                None,
+            ),
+            sample(
+                201,
+                1,
+                "opencode",
+                Some("/home/u/.opencode/bin/opencode"),
+                None,
+            ),
         ];
         let assigned = assign_groups(&s, &DesktopIndex::default());
         let groups = build_groups(&assigned, &s);
@@ -312,7 +417,13 @@ mod tests {
     #[test]
     fn firefox_helpers_with_distinct_exe_fold_to_root() {
         // A synthetic child whose exe basename is NOT the browser root, but whose parent is.
-        let mut child = sample(302, 301, "Web Content", Some("/usr/lib64/firefox/helper"), None);
+        let mut child = sample(
+            302,
+            301,
+            "Web Content",
+            Some("/usr/lib64/firefox/helper"),
+            None,
+        );
         child.cmdline = Some("helper".into());
         let s = vec![
             sample(301, 1, "firefox", Some("/usr/lib64/firefox/firefox"), None),

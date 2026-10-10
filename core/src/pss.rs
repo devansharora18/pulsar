@@ -25,8 +25,13 @@ impl SmapsRollup {
     pub fn parse(text: &str) -> Self {
         let mut r = SmapsRollup::default();
         for line in text.lines() {
-            let Some((k, v)) = line.split_once(':') else { continue };
-            let Some(num) = v.split_whitespace().next().and_then(|x| x.parse::<u64>().ok())
+            let Some((k, v)) = line.split_once(':') else {
+                continue;
+            };
+            let Some(num) = v
+                .split_whitespace()
+                .next()
+                .and_then(|x| x.parse::<u64>().ok())
             else {
                 continue;
             };

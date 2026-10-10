@@ -9,9 +9,7 @@ pub fn human_bytes(bytes: f64) -> String {
         v /= 1024.0;
         i += 1;
     }
-    if i == 0 {
-        format!("{v:.0} {}", UNITS[i])
-    } else if v >= 100.0 {
+    if i == 0 || v >= 100.0 {
         format!("{v:.0} {}", UNITS[i])
     } else {
         format!("{v:.1} {}", UNITS[i])
@@ -62,6 +60,7 @@ pub fn human_temp(c: f64) -> String {
 }
 
 /// Seconds → "3h 12m" / "12m 04s" / "42s".
+#[allow(dead_code)]
 pub fn human_duration(secs: f64) -> String {
     let s = secs.max(0.0) as u64;
     let (h, m, sec) = (s / 3600, (s % 3600) / 60, s % 60);

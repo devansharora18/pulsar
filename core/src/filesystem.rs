@@ -39,10 +39,29 @@ pub fn parse_mounts(text: &str) -> Vec<(String, String, String)> {
 pub fn is_interesting_fs(fstype: &str) -> bool {
     !matches!(
         fstype,
-        "proc" | "sysfs" | "devtmpfs" | "devpts" | "cgroup" | "cgroup2" | "securityfs"
-            | "pstore" | "efivarfs" | "bpf" | "tmpfs" | "debugfs" | "tracefs" | "autofs"
-            | "mqueue" | "hugetlbfs" | "fusectl" | "configfs" | "binfmt_misc" | "rpc_pipefs"
-            | "nsfs" | "overlay" | "squashfs"
+        "proc"
+            | "sysfs"
+            | "devtmpfs"
+            | "devpts"
+            | "cgroup"
+            | "cgroup2"
+            | "securityfs"
+            | "pstore"
+            | "efivarfs"
+            | "bpf"
+            | "tmpfs"
+            | "debugfs"
+            | "tracefs"
+            | "autofs"
+            | "mqueue"
+            | "hugetlbfs"
+            | "fusectl"
+            | "configfs"
+            | "binfmt_misc"
+            | "rpc_pipefs"
+            | "nsfs"
+            | "overlay"
+            | "squashfs"
     )
 }
 
@@ -98,7 +117,9 @@ mod tests {
 
     #[test]
     fn parses_mounts() {
-        let m = parse_mounts("/dev/nvme0n1p3 / btrfs rw,seclabel,compress=zstd:1 0 0\nproc /proc proc rw 0 0\n");
+        let m = parse_mounts(
+            "/dev/nvme0n1p3 / btrfs rw,seclabel,compress=zstd:1 0 0\nproc /proc proc rw 0 0\n",
+        );
         assert_eq!(m.len(), 2);
         assert_eq!(m[0].0, "/dev/nvme0n1p3");
         assert_eq!(m[0].2, "btrfs");

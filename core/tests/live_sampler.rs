@@ -21,7 +21,10 @@ fn two_ticks_are_consistent_and_do_not_panic() {
     assert!(b.sum_pss <= b.mem.used_real + b.mem.cache_reclaimable + b.mem.kernel);
 
     // Unattributed is exactly what the UI will show; the books must close.
-    assert_eq!(b.mem.kernel + b.sum_pss + b.unattributed_mem(), b.mem.used_real);
+    assert_eq!(
+        b.mem.kernel + b.sum_pss + b.unattributed_mem(),
+        b.mem.used_real
+    );
 
     // CPU heat grid should cover the logical CPUs.
     assert!(!b.cpu.cores.is_empty());
@@ -31,7 +34,10 @@ fn two_ticks_are_consistent_and_do_not_panic() {
     // Every group's members must exist in the process list.
     for g in &b.groups {
         for pid in &g.pids {
-            assert!(b.process_by_pid(*pid).is_some(), "group references missing pid");
+            assert!(
+                b.process_by_pid(*pid).is_some(),
+                "group references missing pid"
+            );
         }
     }
 

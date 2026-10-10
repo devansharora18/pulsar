@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use pulsar_core::cpu::CoreSample;
 use pulsar_core::meminfo::MemoryBreakdown;
 
-use crate::format::{human_bytes, human_kb, human_temp, pct};
+use crate::format::human_kb;
 
 /// Build `(line, area)` SVG path strings for a sparkline.
 pub fn spark_paths(values: &[f64], w: f64, h: f64, hi: f64) -> (String, String) {
@@ -79,7 +79,11 @@ pub fn Gauge(
 ) -> Element {
     let r = size / 2.0 - 7.0;
     let circ = 2.0 * std::f64::consts::PI * r;
-    let frac = if max > 0.0 { (value / max).clamp(0.0, 1.0) } else { 0.0 };
+    let frac = if max > 0.0 {
+        (value / max).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let offset = circ * (1.0 - frac);
     rsx! {
         div { class: "gauge", style: "width: {size}px; height: {size}px;",
@@ -195,17 +199,4 @@ pub fn LegendRow(label: String, value: String, color: String) -> Element {
             span { class: "mono-num", "{value}" }
         }
     }
-}
-
-/// Format a memory value for the process table.
-pub fn mem_label(kb: u64) -> String {
-    human_bytes(kb as f64 * 1024.0)
-}
-
-pub fn cpu_label(v: f64) -> String {
-    pct(v)
-}
-
-pub fn temp_label(c: f64) -> String {
-    human_temp(c)
 }

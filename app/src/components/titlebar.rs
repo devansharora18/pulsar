@@ -1,7 +1,7 @@
 //! Custom frameless titlebar: drag, minimize, maximize, close.
 
-use dioxus::prelude::*;
 use dioxus::desktop::use_window;
+use dioxus::prelude::*;
 
 use crate::format::{human_bytes, human_watts, pct};
 use crate::state::{AppState, Drawer};

@@ -3,14 +3,13 @@
 use dioxus::prelude::*;
 use pulsar_core::group::{Group, ProcSample};
 
+use crate::components::widgets::Sparkline;
 use crate::format::{human_bytes, human_rate, human_watts, monogram, pct};
 use crate::icon;
 use crate::state::{AppState, Pending, PendingKind, SortKey, ViewMode};
-use crate::components::widgets::Sparkline;
 
 #[component]
 pub fn ProcessesView() -> Element {
-    let state = use_context::<AppState>();
     rsx! {
         Toolbar {}
         ActionBar {}
@@ -224,7 +223,15 @@ fn ProcessTable() -> Element {
 
     let header = |key: SortKey, label: &'static str| -> Element {
         let sorted = sort == key;
-        let arrow = if sorted { if desc { " ▾" } else { " ▴" } } else { "" };
+        let arrow = if sorted {
+            if desc {
+                " ▾"
+            } else {
+                " ▴"
+            }
+        } else {
+            ""
+        };
         rsx! {
             div {
                 class: if sorted { "th sorted" } else { "th" },
@@ -252,14 +259,25 @@ fn ProcessTable() -> Element {
         let mut procs: Vec<&ProcSample> = snapshot.processes.iter().collect();
         procs.sort_by(|a, b| {
             let ord = match sort {
-                SortKey::Cpu => a.cpu_pct.partial_cmp(&b.cpu_pct).unwrap_or(std::cmp::Ordering::Equal),
-                SortKey::Power => a.power_w.partial_cmp(&b.power_w).unwrap_or(std::cmp::Ordering::Equal),
-                SortKey::Io => (a.io.read_bytes + a.io.write_bytes).cmp(&(b.io.read_bytes + b.io.write_bytes)),
-                SortKey::Rss => a.mem.rss.cmp(&b.mem.rss),
+                SortKey::Cpu => a
+                    .cpu_pct
+                    .partial_cmp(&b.cpu_pct)
+                    .unwrap_or(std::cmp::Ordering::Equal),
+                SortKey::Power => a
+                    .power_w
+                    .partial_cmp(&b.power_w)
+                    .unwrap_or(std::cmp::Ordering::Equal),
+                SortKey::Io => {
+                    (a.io.read_bytes + a.io.write_bytes).cmp(&(b.io.read_bytes + b.io.write_bytes))
+                }
                 SortKey::Pid => a.pid.cmp(&b.pid),
                 _ => a.mem.pss.cmp(&b.mem.pss),
             };
-            if desc { ord.reverse() } else { ord }
+            if desc {
+                ord.reverse()
+            } else {
+                ord
+            }
         });
         for p in procs.iter().take(400) {
             rows.push(rsx! { ProcessRow { key: "{p.pid}", p: (*p).clone() } });
@@ -405,7 +423,9 @@ fn ChildRow(p: ProcSample) -> Element {
         human_bytes(p.mem.rss as f64 * 1024.0),
         human_bytes(p.mem.pss as f64 * 1024.0),
         human_bytes(p.mem.swap as f64 * 1024.0),
-        p.cmdline.clone().unwrap_or_else(|| exe.clone().unwrap_or_default()),
+        p.cmdline
+            .clone()
+            .unwrap_or_else(|| exe.clone().unwrap_or_default()),
     );
     let engine = if p.mem.from_rollup { "PSS" } else { "RSS" };
     rsx! {

@@ -4,17 +4,12 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Density {
     Compact,
+    #[default]
     Comfy,
-}
-
-impl Default for Density {
-    fn default() -> Self {
-        Density::Comfy
-    }
 }
 
 fn default_refresh_ms() -> u64 {
@@ -98,7 +93,9 @@ impl Config {
     }
 
     pub fn from_toml(text: &str) -> Self {
-        toml::from_str::<Config>(text).unwrap_or_default().sanitize()
+        toml::from_str::<Config>(text)
+            .unwrap_or_default()
+            .sanitize()
     }
 
     pub fn to_toml(&self) -> String {
@@ -106,7 +103,9 @@ impl Config {
     }
 
     pub fn config_dir() -> PathBuf {
-        dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("pulsar")
+        dirs::config_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join("pulsar")
     }
 
     pub fn config_path() -> PathBuf {
@@ -149,7 +148,8 @@ mod tests {
 
     #[test]
     fn out_of_range_values_are_clamped() {
-        let c = Config::from_toml("refresh_ms = 10\nopacity = 5.0\nfont_size = 100\nhistory_len = 1\n");
+        let c =
+            Config::from_toml("refresh_ms = 10\nopacity = 5.0\nfont_size = 100\nhistory_len = 1\n");
         assert_eq!(c.refresh_ms, 500);
         assert_eq!(c.opacity, 1.0);
         assert_eq!(c.font_size, 28);

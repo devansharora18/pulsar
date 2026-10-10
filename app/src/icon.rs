@@ -13,7 +13,9 @@ fn cache() -> &'static Mutex<HashMap<String, Option<String>>> {
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-const SIZES: &[&str] = &["scalable", "128x128", "96x96", "64x64", "48x48", "32x32", "24x24", "256x256"];
+const SIZES: &[&str] = &[
+    "scalable", "128x128", "96x96", "64x64", "48x48", "32x32", "24x24", "256x256",
+];
 const EXTS: &[&str] = &["svg", "png"];
 
 /// Current GTK icon theme, or `None`.
@@ -40,7 +42,9 @@ fn icon_base_dirs() -> Vec<PathBuf> {
         }
     }
     dirs.push(PathBuf::from("/usr/share/icons/hicolor"));
-    dirs.push(PathBuf::from("/var/lib/flatpak/exports/share/icons/hicolor"));
+    dirs.push(PathBuf::from(
+        "/var/lib/flatpak/exports/share/icons/hicolor",
+    ));
     if let Some(home) = dirs::home_dir() {
         dirs.push(home.join(".local/share/icons/hicolor"));
     }
@@ -103,9 +107,10 @@ fn find_icon_file(name: &str) -> Option<PathBuf> {
 }
 
 /// Minimal base64 encoder (standard alphabet, padded).
+#[allow(dead_code)]
 pub fn base64(data: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
         let b = [
             chunk[0],
@@ -115,13 +120,22 @@ pub fn base64(data: &[u8]) -> String {
         let n = ((b[0] as u32) << 16) | ((b[1] as u32) << 8) | b[2] as u32;
         out.push(T[(n >> 18) as usize & 63] as char);
         out.push(T[(n >> 12) as usize & 63] as char);
-        out.push(if chunk.len() > 1 { T[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if chunk.len() > 2 { T[n as usize & 63] as char } else { '=' });
+        out.push(if chunk.len() > 1 {
+            T[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            T[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     out
 }
 
 /// True if a file exists at the resolved icon path (test helper).
+#[allow(dead_code)]
 pub fn icon_exists(name: &str) -> bool {
     find_icon_file(name).is_some() || Path::new(name).exists()
 }

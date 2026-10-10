@@ -5,8 +5,8 @@ mod state;
 mod theme_css;
 mod treemap;
 
-use dioxus::prelude::*;
 use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
+use dioxus::prelude::*;
 use pulsar_core::sampler::Sampler;
 use std::path::PathBuf;
 
@@ -41,7 +41,10 @@ fn main() {
 }
 
 fn parse_cli(args: impl Iterator<Item = String>) -> Cli {
-    let mut cli = Cli { delay_secs: 4, ..Default::default() };
+    let mut cli = Cli {
+        delay_secs: 4,
+        ..Default::default()
+    };
     let mut it = args.peekable();
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -65,24 +68,81 @@ fn parse_cli(args: impl Iterator<Item = String>) -> Cli {
 }
 
 /// In `--screenshot` mode, wait for the UI to populate, capture the screen, then exit.
+///
+/// Capture is compositor-dependent. The chain is: an explicit `PULSAR_CAPTURE_CMD`
+/// (with `{}` replaced by the path), then `gnome-screenshot`, `grim` (wlroots), then
+/// ImageMagick `import`/`ffmpeg` on X11. On GNOME Wayland `grim` lacks the capture
+/// protocol and the Shell screenshot is denied to apps — see docs/TODO.md.
 fn spawn_capture(path: PathBuf, delay_secs: u64) {
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(delay_secs));
         if let Some(parent) = path.parent() {
             let _ = std::fs::create_dir_all(parent);
         }
-        let on_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
-        let status = if on_wayland {
-            std::process::Command::new("grim").arg(&path).status()
+        if capture(&path) {
+            eprintln!("pulsar: captured {}", path.display());
         } else {
-            std::process::Command::new("import").args(["-window", "root"]).arg(&path).status()
-        };
-        match status {
-            Ok(s) if s.success() => eprintln!("pulsar: captured {path:?}"),
-            other => eprintln!("pulsar: capture failed ({other:?}); install grim (wayland) or imagemagick (x11)"),
+            eprintln!(
+                "pulsar: screen capture unavailable on this session; see docs/TODO.md \
+                 (set PULSAR_CAPTURE_CMD or install gnome-screenshot)"
+            );
         }
         std::process::exit(0);
     });
+}
+
+fn capture(path: &std::path::Path) -> bool {
+    if let Ok(cmd) = std::env::var("PULSAR_CAPTURE_CMD") {
+        let cmd = cmd.replace("{}", &path.display().to_string());
+        if std::process::Command::new("sh")
+            .args(["-c", &cmd])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+        {
+            return true;
+        }
+    }
+    let on_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+    let attempts: Vec<(&str, Vec<String>)> = if on_wayland {
+        vec![
+            (
+                "gnome-screenshot",
+                vec!["-f".into(), path.display().to_string()],
+            ),
+            ("grim", vec![path.display().to_string()]),
+        ]
+    } else {
+        vec![
+            (
+                "import",
+                vec!["-window".into(), "root".into(), path.display().to_string()],
+            ),
+            (
+                "ffmpeg",
+                vec![
+                    "-hide_banner".into(),
+                    "-loglevel".into(),
+                    "error".into(),
+                    "-f".into(),
+                    "x11grab".into(),
+                    "-i".into(),
+                    ":0".into(),
+                    "-frames:v".into(),
+                    "1".into(),
+                    "-y".into(),
+                    path.display().to_string(),
+                ],
+            ),
+        ]
+    };
+    for (bin, args) in attempts {
+        match std::process::Command::new(bin).args(&args).status() {
+            Ok(s) if s.success() && path.exists() => return true,
+            _ => continue,
+        }
+    }
+    false
 }
 
 #[component]
@@ -102,7 +162,8 @@ fn App() -> Element {
                 let mut s = state.snapshot;
                 s.set(snap);
                 // In screenshot mode, reveal a few groups so the capture shows expansion.
-                if CLI.get().map(|c| c.expand).unwrap_or(false) && state.expanded.read().is_empty() {
+                if CLI.get().map(|c| c.expand).unwrap_or(false) && state.expanded.read().is_empty()
+                {
                     let snap = state.snapshot.read();
                     let keys: Vec<String> =
                         snap.groups.iter().take(4).map(|g| g.key.clone()).collect();
@@ -123,7 +184,9 @@ fn App() -> Element {
         loop {
             tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
             let path = pulsar_core::config::Config::config_path();
-            let mtime = std::fs::metadata(&path).ok().and_then(|m| m.modified().ok());
+            let mtime = std::fs::metadata(&path)
+                .ok()
+                .and_then(|m| m.modified().ok());
             if mtime != last {
                 last = mtime;
                 state.reload_config();
@@ -138,7 +201,7 @@ fn App() -> Element {
             class: "window",
             tabindex: "0",
             onmounted: move |e| {
-                let _ = e.set_focus(true);
+                focus_window(e);
             },
             onkeydown: move |e| handle_key(state, &e),
             Titlebar {}
@@ -149,6 +212,11 @@ fn App() -> Element {
             Overlays {}
         }
     }
+}
+
+#[allow(clippy::let_underscore_future)]
+fn focus_window(e: Event<MountedData>) {
+    let _ = e.set_focus(true);
 }
 
 fn handle_key(state: AppState, e: &KeyboardData) {

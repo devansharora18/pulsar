@@ -30,7 +30,9 @@ pub struct NetCollector {
 impl NetCollector {
     pub fn sample(&mut self, dt: f64) -> Vec<NetInterface> {
         let mut out = Vec::new();
-        let Ok(rd) = std::fs::read_dir("/sys/class/net") else { return out };
+        let Ok(rd) = std::fs::read_dir("/sys/class/net") else {
+            return out;
+        };
         let mut ifaces: Vec<(String, u64, u64, bool, bool)> = Vec::new();
         for ent in rd.flatten() {
             let name = ent.file_name().to_string_lossy().into_owned();
@@ -45,14 +47,26 @@ impl NetCollector {
         }
         ifaces.sort_by(|a, b| a.0.cmp(&b.0));
         for (name, rx, tx, up, is_virtual) in ifaces {
-            let (rx_bps, tx_bps) = if let Some((_, prx, ptx)) = self.prev.iter().find(|p| p.0 == name) {
-                (rate(*prx, rx, dt), rate(*ptx, tx, dt))
-            } else {
-                (0.0, 0.0)
-            };
-            out.push(NetInterface { name, rx_bytes: rx, tx_bytes: tx, rx_bps, tx_bps, up, is_virtual });
+            let (rx_bps, tx_bps) =
+                if let Some((_, prx, ptx)) = self.prev.iter().find(|p| p.0 == name) {
+                    (rate(*prx, rx, dt), rate(*ptx, tx, dt))
+                } else {
+                    (0.0, 0.0)
+                };
+            out.push(NetInterface {
+                name,
+                rx_bytes: rx,
+                tx_bytes: tx,
+                rx_bps,
+                tx_bps,
+                up,
+                is_virtual,
+            });
         }
-        self.prev = out.iter().map(|i| (i.name.clone(), i.rx_bytes, i.tx_bytes)).collect();
+        self.prev = out
+            .iter()
+            .map(|i| (i.name.clone(), i.rx_bytes, i.tx_bytes))
+            .collect();
         out
     }
 }

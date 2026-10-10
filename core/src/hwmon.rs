@@ -12,16 +12,22 @@ pub struct TempSensor {
 /// Read every `temp*_input` under `/sys/class/hwmon`. Values are millidegrees.
 pub fn read_temps() -> Vec<TempSensor> {
     let mut out = Vec::new();
-    let Ok(rd) = std::fs::read_dir("/sys/class/hwmon") else { return out };
+    let Ok(rd) = std::fs::read_dir("/sys/class/hwmon") else {
+        return out;
+    };
     for ent in rd.flatten() {
         let base = ent.path();
         let chip = std::fs::read_to_string(base.join("name"))
             .map(|s| s.trim().to_string())
             .unwrap_or_else(|_| ent.file_name().to_string_lossy().into_owned());
-        let Ok(files) = std::fs::read_dir(&base) else { continue };
+        let Ok(files) = std::fs::read_dir(&base) else {
+            continue;
+        };
         for f in files.flatten() {
             let fname = f.file_name().to_string_lossy().into_owned();
-            let Some(stem) = fname.strip_suffix("_input") else { continue };
+            let Some(stem) = fname.strip_suffix("_input") else {
+                continue;
+            };
             if !stem.starts_with("temp") {
                 continue;
             }
@@ -30,7 +36,11 @@ pub fn read_temps() -> Vec<TempSensor> {
                 .unwrap_or_else(|_| stem.to_string());
             if let Ok(raw) = std::fs::read_to_string(f.path()) {
                 if let Ok(milli) = raw.trim().parse::<i64>() {
-                    out.push(TempSensor { chip: chip.clone(), label, temp_c: milli as f64 / 1000.0 });
+                    out.push(TempSensor {
+                        chip: chip.clone(),
+                        label,
+                        temp_c: milli as f64 / 1000.0,
+                    });
                 }
             }
         }
@@ -46,7 +56,12 @@ pub fn cpu_temp_c() -> Option<f64> {
         .iter()
         .find(|s| s.chip == "k10temp" || s.chip == "coretemp")
         .map(|s| s.temp_c)
-        .or_else(|| temps.iter().find(|s| s.chip.contains("cpu")).map(|s| s.temp_c))
+        .or_else(|| {
+            temps
+                .iter()
+                .find(|s| s.chip.contains("cpu"))
+                .map(|s| s.temp_c)
+        })
 }
 
 /// Best-effort GPU temperature.

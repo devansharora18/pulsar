@@ -13,7 +13,10 @@ pub struct Ring {
 impl Ring {
     pub fn new(cap: usize) -> Self {
         let cap = cap.max(1);
-        Ring { cap, data: VecDeque::with_capacity(cap + 1) }
+        Ring {
+            cap,
+            data: VecDeque::with_capacity(cap + 1),
+        }
     }
 
     pub fn push(&mut self, v: f64) {
@@ -51,7 +54,10 @@ impl Ring {
         if (hi - lo).abs() < f64::EPSILON {
             return self.data.iter().map(|_| 0.5).collect();
         }
-        self.data.iter().map(|v| ((v - lo) / (hi - lo)).clamp(0.0, 1.0)).collect()
+        self.data
+            .iter()
+            .map(|v| ((v - lo) / (hi - lo)).clamp(0.0, 1.0))
+            .collect()
     }
 }
 
@@ -95,7 +101,10 @@ impl History {
 
     pub fn push_group_power(&mut self, key: &str, w: f64) {
         let cap = self.cap;
-        self.group_power.entry(key.to_string()).or_insert_with(|| Ring::new(cap)).push(w);
+        self.group_power
+            .entry(key.to_string())
+            .or_insert_with(|| Ring::new(cap))
+            .push(w);
     }
 
     /// Drop group series whose groups have not appeared for a while (kept small).

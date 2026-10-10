@@ -144,8 +144,13 @@ impl Sampler {
             alive.insert(pid);
             let cached = self.cache.get_or_read(pid, stat.starttime).clone();
 
-            let prev = self.prev_ticks.get(&pid).filter(|(st, _)| *st == stat.starttime);
-            let proc_delta = prev.map(|(_, t)| stat.total_ticks().saturating_sub(*t)).unwrap_or(0);
+            let prev = self
+                .prev_ticks
+                .get(&pid)
+                .filter(|(st, _)| *st == stat.starttime);
+            let proc_delta = prev
+                .map(|(_, t)| stat.total_ticks().saturating_sub(*t))
+                .unwrap_or(0);
             new_ticks.insert(pid, (stat.starttime, stat.total_ticks()));
 
             let cpu_pct = proc_delta as f64 / (dt * self.clock_ticks as f64) * 100.0;
@@ -175,7 +180,7 @@ impl Sampler {
 
         let assigned = assign_groups(&processes, &self.desktop);
         let mut groups = build_groups(&assigned, &processes);
-        groups.sort_by(|a, b| b.pss.cmp(&a.pss));
+        groups.sort_by_key(|g| std::cmp::Reverse(g.pss));
         let sum_pss: u64 = processes.iter().map(|p| p.mem.pss).sum();
 
         self.cache.retain(&alive);
@@ -183,16 +188,30 @@ impl Sampler {
 
         // History.
         self.history.cpu.push(cpu.overall_usage_pct);
-        self.history.mem_used.push(mem.used_real as f64 / 1024.0 / 1024.0);
-        self.history.mem_cache.push(mem.cache_reclaimable as f64 / 1024.0 / 1024.0);
-        self.history.swap.push(mem.swap_used as f64 / 1024.0 / 1024.0);
+        self.history
+            .mem_used
+            .push(mem.used_real as f64 / 1024.0 / 1024.0);
+        self.history
+            .mem_cache
+            .push(mem.cache_reclaimable as f64 / 1024.0 / 1024.0);
+        self.history
+            .swap
+            .push(mem.swap_used as f64 / 1024.0 / 1024.0);
         self.history.power.push(power.total_w);
-        self.history.cpu_temp.push(crate::hwmon::cpu_temp_c().unwrap_or(f64::NAN));
-        self.history.gpu_temp.push(crate::hwmon::gpu_temp_c().unwrap_or(f64::NAN));
-        let (rx, tx) = net.iter().fold((0.0, 0.0), |(a, b), i| (a + i.rx_bps, b + i.tx_bps));
+        self.history
+            .cpu_temp
+            .push(crate::hwmon::cpu_temp_c().unwrap_or(f64::NAN));
+        self.history
+            .gpu_temp
+            .push(crate::hwmon::gpu_temp_c().unwrap_or(f64::NAN));
+        let (rx, tx) = net
+            .iter()
+            .fold((0.0, 0.0), |(a, b), i| (a + i.rx_bps, b + i.tx_bps));
         self.history.net_rx.push(rx);
         self.history.net_tx.push(tx);
-        let (dr, dw) = disks.iter().fold((0.0, 0.0), |(a, b), d| (a + d.read_bps, b + d.write_bps));
+        let (dr, dw) = disks
+            .iter()
+            .fold((0.0, 0.0), |(a, b), d| (a + d.read_bps, b + d.write_bps));
         self.history.disk_read.push(dr);
         self.history.disk_write.push(dw);
 
@@ -279,7 +298,9 @@ fn read_file(path: String) -> String {
 /// PIDs with a numeric `/proc` entry.
 pub fn read_pids() -> Vec<i32> {
     let mut out = Vec::new();
-    let Ok(rd) = std::fs::read_dir("/proc") else { return out };
+    let Ok(rd) = std::fs::read_dir("/proc") else {
+        return out;
+    };
     for ent in rd.flatten() {
         if let Some(name) = ent.file_name().to_str() {
             if let Ok(pid) = name.parse::<i32>() {

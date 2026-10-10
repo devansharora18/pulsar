@@ -12,6 +12,7 @@
 /// - `app-gnome-org.gnome.Nautilus-1234.scope`         → `org.gnome.Nautilus`
 /// - `app-zen_browser.zen-2878664422.scope`            → `zen_browser.zen`
 /// - `app-code-1234.scope`                             → `code`
+///
 /// And deliberately ignores `ptyxis-spawn-*.scope` (a terminal, not an app).
 pub fn app_id_from_cgroup_path(path: &str) -> Option<String> {
     for seg in path.split('/') {
@@ -48,7 +49,10 @@ pub fn unified_cgroup_path(pid: i32) -> Option<String> {
         }
     }
     // v1 fallback: take any path.
-    text.lines().next().and_then(|l| l.splitn(3, ':').nth(2)).map(str::to_string)
+    text.lines()
+        .next()
+        .and_then(|l| l.splitn(3, ':').nth(2))
+        .map(str::to_string)
 }
 
 /// From the unified path, resolve the desktop application id.
@@ -77,13 +81,19 @@ mod tests {
     #[test]
     fn flatpak_zen_scope_resolves_to_dotted_app_id() {
         let p = "/user.slice/user-1000.slice/user@1000.service/app.slice/app-graphical.slice/app-flatpak-app.zen_browser.zen-2878664422.scope";
-        assert_eq!(app_id_from_cgroup_path(p).as_deref(), Some("app.zen_browser.zen"));
+        assert_eq!(
+            app_id_from_cgroup_path(p).as_deref(),
+            Some("app.zen_browser.zen")
+        );
     }
 
     #[test]
     fn gnome_scope_resolves_to_desktop_id() {
         let p = "/user.slice/user-1000.slice/user@1000.service/app.slice/app-gnome-org.gnome.Nautilus-2628.scope";
-        assert_eq!(app_id_from_cgroup_path(p).as_deref(), Some("org.gnome.Nautilus"));
+        assert_eq!(
+            app_id_from_cgroup_path(p).as_deref(),
+            Some("org.gnome.Nautilus")
+        );
     }
 
     #[test]

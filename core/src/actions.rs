@@ -54,14 +54,24 @@ pub fn terminate(pids: &[i32]) -> ActionResult {
     if n == 0 {
         ActionResult::err("terminate", "group", "no signals delivered", false)
     } else {
-        ActionResult::ok("terminate", "group", format!("SIGTERM sent to {n} process(es)"), false)
+        ActionResult::ok(
+            "terminate",
+            "group",
+            format!("SIGTERM sent to {n} process(es)"),
+            false,
+        )
     }
 }
 
 /// SIGKILL a set of pids.
 pub fn force_kill(pids: &[i32]) -> ActionResult {
     let n = to_signal(Signal::SIGKILL, pids);
-    ActionResult::ok("kill", "group", format!("SIGKILL sent to {n} process(es)"), false)
+    ActionResult::ok(
+        "kill",
+        "group",
+        format!("SIGKILL sent to {n} process(es)"),
+        false,
+    )
 }
 
 /// SIGTERM now, then SIGKILL any survivors after `grace`.
@@ -82,7 +92,10 @@ pub fn terminate_then_kill(pids: Vec<i32>, grace: Duration) -> ActionResult {
     ActionResult::ok(
         "kill",
         "group",
-        format!("SIGTERM sent to {n}; SIGKILL in {}s for survivors", grace.as_secs()),
+        format!(
+            "SIGTERM sent to {n}; SIGKILL in {}s for survivors",
+            grace.as_secs()
+        ),
         false,
     )
 }
@@ -104,7 +117,12 @@ pub fn renice(pid: i32, nice: i32) -> ActionResult {
     // SAFETY: setpriority is a plain syscall wrapper.
     let rc = unsafe { libc::setpriority(libc::PRIO_PROCESS, pid as libc::id_t, nice) };
     if rc == 0 {
-        ActionResult::ok("renice", &pid.to_string(), format!("nice set to {nice}"), false)
+        ActionResult::ok(
+            "renice",
+            &pid.to_string(),
+            format!("nice set to {nice}"),
+            false,
+        )
     } else {
         let e = std::io::Error::last_os_error();
         ActionResult::err("renice", &pid.to_string(), format!("failed: {e}"), false)
@@ -135,7 +153,10 @@ fn human_kb(kb: u64) -> String {
 
 /// Run a shell command through `pkexec`. Never silent: the caller logs the [`ActionResult`].
 fn pkexec(action: &str, target: &str, sh: &str) -> ActionResult {
-    match std::process::Command::new("pkexec").args(["sh", "-c", sh]).status() {
+    match std::process::Command::new("pkexec")
+        .args(["sh", "-c", sh])
+        .status()
+    {
         Ok(s) if s.success() => ActionResult::ok(action, target, "completed", true),
         Ok(s) => ActionResult::err(action, target, format!("pkexec exited with {s}"), true),
         Err(e) => ActionResult::err(action, target, format!("pkexec failed: {e}"), true),
@@ -144,17 +165,29 @@ fn pkexec(action: &str, target: &str, sh: &str) -> ActionResult {
 
 /// `echo 1 > /proc/sys/vm/drop_caches` (reclaimable cache only).
 pub fn drop_caches() -> ActionResult {
-    pkexec("drop-caches", "system", "sync; echo 1 > /proc/sys/vm/drop_caches")
+    pkexec(
+        "drop-caches",
+        "system",
+        "sync; echo 1 > /proc/sys/vm/drop_caches",
+    )
 }
 
 /// `echo 3 > /proc/sys/vm/drop_caches` (cache + dentries + inodes).
 pub fn drop_caches_all() -> ActionResult {
-    pkexec("drop-caches-all", "system", "sync; echo 3 > /proc/sys/vm/drop_caches")
+    pkexec(
+        "drop-caches-all",
+        "system",
+        "sync; echo 3 > /proc/sys/vm/drop_caches",
+    )
 }
 
 /// `echo 1 > /proc/sys/vm/compact_memory`.
 pub fn compact_memory() -> ActionResult {
-    pkexec("compact-memory", "system", "echo 1 > /proc/sys/vm/compact_memory")
+    pkexec(
+        "compact-memory",
+        "system",
+        "echo 1 > /proc/sys/vm/compact_memory",
+    )
 }
 
 /// `swapoff -a && swapon -a` — reads every swapped page back into RAM.
@@ -193,7 +226,11 @@ mod tests {
 
     #[test]
     fn swap_flush_blocker_reasons() {
-        let mut m = MemoryBreakdown { swap_used: 0, available: 1_000_000, ..Default::default() };
+        let mut m = MemoryBreakdown {
+            swap_used: 0,
+            available: 1_000_000,
+            ..Default::default()
+        };
         assert!(swap_flush_blocker(&m).is_some());
         // Plenty of RAM.
         m.swap_used = 1_000_000;

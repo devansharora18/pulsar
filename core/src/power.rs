@@ -35,7 +35,11 @@ pub struct Baseline {
 
 impl Baseline {
     pub fn new() -> Self {
-        Baseline { value: 0.0, initialized: false, alpha: 0.002 }
+        Baseline {
+            value: 0.0,
+            initialized: false,
+            alpha: 0.002,
+        }
     }
 
     pub fn value(&self) -> f64 {
@@ -119,7 +123,11 @@ impl PowerSampler {
         let tdp = tdp_w
             .or_else(crate::rapl::read_tdp_w)
             .unwrap_or(DEFAULT_TDP_W);
-        PowerSampler { rapl: RaplReader::new(), baseline: Baseline::new(), tdp_w: tdp }
+        PowerSampler {
+            rapl: RaplReader::new(),
+            baseline: Baseline::new(),
+            tdp_w: tdp,
+        }
     }
 
     pub fn tdp_w(&self) -> f64 {

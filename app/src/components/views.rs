@@ -5,7 +5,9 @@ use pulsar_core::power::PowerKind;
 
 use crate::components::process_table::ProcessesView;
 use crate::components::widgets::{Gauge, HeatGrid, Sparkline, StackBar};
-use crate::format::{human_bytes, human_freq_mhz, human_kb, human_rate, human_temp, human_watts, pct};
+use crate::format::{
+    human_bytes, human_freq_mhz, human_kb, human_rate, human_temp, human_watts, pct,
+};
 use crate::state::{AppState, Pending, PendingKind, View};
 use crate::treemap::squarify;
 
@@ -37,18 +39,22 @@ fn Overview() -> Element {
     let disks = snap.disks.clone();
     let fss = snap.filesystems.clone();
     let temps = snap.temps.clone();
-    let swap_pct = if mem.total > 0 { 0.0 } else { 0.0 };
     let swap_frac = if mem.swap_total > 0 {
         mem.swap_used as f64 / mem.swap_total as f64 * 100.0
     } else {
         0.0
     };
-    let _ = swap_pct;
     let cpu_temp = temps
         .iter()
         .find(|t| t.chip == "k10temp" || t.chip == "coretemp")
         .map(|t| t.temp_c);
     let gpu_temp = temps.iter().find(|t| t.chip == "amdgpu").map(|t| t.temp_c);
+    let freqs: Vec<u64> = cpu.cores.iter().filter_map(|c| c.freq_mhz).collect();
+    let avg_freq = if freqs.is_empty() {
+        None
+    } else {
+        Some(freqs.iter().sum::<u64>() / freqs.len() as u64)
+    };
     drop(snap);
 
     let power_label = match power.kind {
@@ -102,6 +108,7 @@ fn Overview() -> Element {
                     span { class: "dim", "load" }
                     span { "{cpu.load1:.2} {cpu.load5:.2} {cpu.load15:.2}" }
                     div { class: "spacer" }
+                    if let Some(f) = avg_freq { span { class: "dim", "~{human_freq_mhz(f)}" } }
                     if let Some(t) = cpu_temp { span { "cpu {human_temp(t)}" } }
                     if let Some(t) = gpu_temp { span { "gpu {human_temp(t)}" } }
                 }
@@ -196,11 +203,19 @@ fn MemoryView() -> Element {
 
     // Treemap data: top groups by PSS.
     let mut tm_groups: Vec<_> = groups.iter().filter(|g| g.pss > 0).collect();
-    tm_groups.sort_by(|a, b| b.pss.cmp(&a.pss));
+    tm_groups.sort_by_key(|g| std::cmp::Reverse(g.pss));
     tm_groups.truncate(40);
     let values: Vec<f64> = tm_groups.iter().map(|g| g.pss as f64).collect();
     let rects = squarify(&values, 1000.0, 340.0);
-    let palette = ["var(--accent)", "var(--blue)", "var(--magenta)", "var(--cyan)", "var(--green)", "var(--yellow)", "var(--orange)"];
+    let palette = [
+        "var(--accent)",
+        "var(--blue)",
+        "var(--magenta)",
+        "var(--cyan)",
+        "var(--green)",
+        "var(--yellow)",
+        "var(--orange)",
+    ];
 
     rsx! {
         div { class: "panel",
@@ -358,7 +373,11 @@ fn PowerView() -> Element {
     let series = snap.series.clone();
     let mut groups: Vec<_> = snap.groups.clone();
     drop(snap);
-    groups.sort_by(|a, b| b.power_w.partial_cmp(&a.power_w).unwrap_or(std::cmp::Ordering::Equal));
+    groups.sort_by(|a, b| {
+        b.power_w
+            .partial_cmp(&a.power_w)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     let top: Vec<_> = groups.iter().filter(|g| g.power_w > 0.0).take(10).collect();
     let dt = state.config_snapshot().refresh_ms as f64 / 1000.0;
     let wh: f64 = series.power.iter().map(|p| p * dt / 3600.0).sum();

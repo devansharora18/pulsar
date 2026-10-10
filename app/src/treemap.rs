@@ -10,6 +10,7 @@ pub struct Rect {
 }
 
 impl Rect {
+    #[allow(dead_code)]
     pub fn area(&self) -> f64 {
         self.w * self.h
     }
@@ -18,14 +19,26 @@ impl Rect {
 /// Lay `values` out in a `w × h` box using the squarified algorithm. Returns one rect per
 /// input value, in the same order. Zero/negative values get a zero-area rect.
 pub fn squarify(values: &[f64], w: f64, h: f64) -> Vec<Rect> {
-    let mut out = vec![Rect { x: 0.0, y: 0.0, w: 0.0, h: 0.0 }; values.len()];
+    let mut out = vec![
+        Rect {
+            x: 0.0,
+            y: 0.0,
+            w: 0.0,
+            h: 0.0
+        };
+        values.len()
+    ];
     let total: f64 = values.iter().filter(|v| **v > 0.0).sum();
     if total <= 0.0 || w <= 0.0 || h <= 0.0 {
         return out;
     }
     // Work on indices sorted descending by value.
     let mut idx: Vec<usize> = (0..values.len()).filter(|i| values[*i] > 0.0).collect();
-    idx.sort_by(|a, b| values[*b].partial_cmp(&values[*a]).unwrap_or(std::cmp::Ordering::Equal));
+    idx.sort_by(|a, b| {
+        values[*b]
+            .partial_cmp(&values[*a])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     let scale = (w * h) / total;
     let areas: Vec<f64> = idx.iter().map(|i| values[*i] * scale).collect();
@@ -63,8 +76,17 @@ pub fn squarify(values: &[f64], w: f64, h: f64) -> Vec<Rect> {
             let col_w = side.min(cw);
             let mut cy = y;
             for k in i..end {
-                let hh = if row_area > 0.0 { areas[k] / row_area * ch } else { 0.0 };
-                out[idx[k]] = Rect { x, y: cy, w: col_w, h: hh };
+                let hh = if row_area > 0.0 {
+                    areas[k] / row_area * ch
+                } else {
+                    0.0
+                };
+                out[idx[k]] = Rect {
+                    x,
+                    y: cy,
+                    w: col_w,
+                    h: hh,
+                };
                 cy += hh;
             }
             x += col_w;
@@ -74,8 +96,17 @@ pub fn squarify(values: &[f64], w: f64, h: f64) -> Vec<Rect> {
             let row_h = side.min(ch);
             let mut cx = x;
             for k in i..end {
-                let ww = if row_area > 0.0 { areas[k] / row_area * cw } else { 0.0 };
-                out[idx[k]] = Rect { x: cx, y, w: ww, h: row_h };
+                let ww = if row_area > 0.0 {
+                    areas[k] / row_area * cw
+                } else {
+                    0.0
+                };
+                out[idx[k]] = Rect {
+                    x: cx,
+                    y,
+                    w: ww,
+                    h: row_h,
+                };
                 cx += ww;
             }
             y += row_h;

@@ -70,7 +70,11 @@ pub fn list_zones() -> Vec<RaplZone> {
             .unwrap_or_else(|| dirname.to_string());
         // `intel-rapl:0` is a package zone; `intel-rapl:0:0` is a subzone.
         let is_package = dirname.matches(':').count() == 1;
-        zones.push(RaplZone { name, path, is_package });
+        zones.push(RaplZone {
+            name,
+            path,
+            is_package,
+        });
     }
     zones.sort_by(|a, b| a.path.cmp(&b.path));
     zones
@@ -103,7 +107,11 @@ impl RaplReader {
         let zones: Vec<RaplZone> = list_zones().into_iter().filter(|z| z.is_package).collect();
         let max_ranges = zones.iter().map(|z| z.max_range()).collect();
         let last = vec![(0, std::time::Instant::now()); zones.len()];
-        RaplReader { zones, last, max_ranges }
+        RaplReader {
+            zones,
+            last,
+            max_ranges,
+        }
     }
 
     pub fn available(&self) -> bool {
@@ -157,7 +165,9 @@ pub fn read_amdgpu_power_w() -> Option<f64> {
             continue;
         }
         let hwmon = p.join("device/hwmon");
-        let Ok(hd) = std::fs::read_dir(&hwmon) else { continue };
+        let Ok(hd) = std::fs::read_dir(&hwmon) else {
+            continue;
+        };
         for h in hd.flatten() {
             if let Ok(v) = std::fs::read_to_string(h.path().join("power1_average")) {
                 if let Ok(uw) = v.trim().parse::<u64>() {
@@ -183,11 +193,17 @@ pub fn read_battery_power_w() -> Option<f64> {
                 return Some(uw.unsigned_abs() as f64 / 1_000_000.0);
             }
         }
-        let curr = std::fs::read_to_string(p.join("current_now")).ok().and_then(|s| s.trim().parse::<i64>().ok());
-        let volt = std::fs::read_to_string(p.join("voltage_now")).ok().and_then(|s| s.trim().parse::<i64>().ok());
+        let curr = std::fs::read_to_string(p.join("current_now"))
+            .ok()
+            .and_then(|s| s.trim().parse::<i64>().ok());
+        let volt = std::fs::read_to_string(p.join("voltage_now"))
+            .ok()
+            .and_then(|s| s.trim().parse::<i64>().ok());
         if let (Some(c), Some(vv)) = (curr, volt) {
             // µA * µV = µW
-            return Some((c.unsigned_abs() as f64 * vv.unsigned_abs() as f64) / 1_000_000_000_000.0);
+            return Some(
+                (c.unsigned_abs() as f64 * vv.unsigned_abs() as f64) / 1_000_000_000_000.0,
+            );
         }
     }
     None
@@ -242,7 +258,11 @@ mod tests {
 
     #[test]
     fn reader_without_zones_is_unavailable() {
-        let mut r = RaplReader { zones: vec![], last: vec![], max_ranges: vec![] };
+        let mut r = RaplReader {
+            zones: vec![],
+            last: vec![],
+            max_ranges: vec![],
+        };
         assert!(!r.available());
         assert_eq!(r.sample(), None);
     }

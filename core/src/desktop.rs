@@ -41,7 +41,9 @@ impl DesktopEntry {
             if !in_group || line.is_empty() || line.starts_with('#') {
                 continue;
             }
-            let Some((k, v)) = line.split_once('=') else { continue };
+            let Some((k, v)) = line.split_once('=') else {
+                continue;
+            };
             let v = v.trim();
             match k {
                 // Skip localized keys like `Name[es]`.
@@ -151,17 +153,24 @@ impl DesktopIndex {
         // the last occurrence.
         let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
         for dir in dirs {
-            let Ok(rd) = std::fs::read_dir(dir) else { continue };
+            let Ok(rd) = std::fs::read_dir(dir) else {
+                continue;
+            };
             for ent in rd.flatten() {
                 let path = ent.path();
                 if path.extension().and_then(|e| e.to_str()) != Some("desktop") {
                     continue;
                 }
-                let Some(id) = path.file_stem().and_then(|s| s.to_str()).map(str::to_string)
+                let Some(id) = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .map(str::to_string)
                 else {
                     continue;
                 };
-                let Ok(content) = std::fs::read_to_string(&path) else { continue };
+                let Ok(content) = std::fs::read_to_string(&path) else {
+                    continue;
+                };
                 if let Some(e) = DesktopEntry::parse(&content, &id, &path) {
                     if let Some(&i) = seen.get(&e.id) {
                         entries[i] = e;
@@ -201,7 +210,11 @@ impl DesktopIndex {
         let needle = exe_basename.to_ascii_lowercase();
         self.entries
             .iter()
-            .find(|e| e.exec_names.iter().any(|n| n.to_ascii_lowercase() == needle))
+            .find(|e| {
+                e.exec_names
+                    .iter()
+                    .any(|n| n.to_ascii_lowercase() == needle)
+            })
             .or_else(|| {
                 self.entries.iter().find(|e| {
                     e.wm_class
@@ -219,7 +232,8 @@ mod tests {
 
     const ZEN: &str = "[Desktop Entry]\nName=Zen Browser\nExec=/usr/bin/flatpak run --branch=stable --command=launch-script.sh app.zen_browser.zen @@u %u @@\nIcon=app.zen_browser.zen\nStartupWMClass=zen\nType=Application\n";
     const FF: &str = "[Desktop Entry]\nName=Firefox\nExec=/usr/lib64/firefox/firefox %u\nIcon=firefox\nType=Application\n";
-    const HIDDEN: &str = "[Desktop Entry]\nName=Hidden\nExec=foo\nNoDisplay=true\nType=Application\n";
+    const HIDDEN: &str =
+        "[Desktop Entry]\nName=Hidden\nExec=foo\nNoDisplay=true\nType=Application\n";
     const LOCALIZED: &str = "[Desktop Entry]\nName=Caja\nName[es]=Caja\nExec=caja\nIcon=system-file-manager\nType=Application\n";
 
     fn entry(id: &str, content: &str) -> DesktopEntry {
@@ -249,12 +263,12 @@ mod tests {
     #[test]
     fn index_matches_by_app_id_and_exe() {
         let index = DesktopIndex {
-            entries: vec![
-                entry("app.zen_browser.zen", ZEN),
-                entry("firefox", FF),
-            ],
+            entries: vec![entry("app.zen_browser.zen", ZEN), entry("firefox", FF)],
         };
-        assert_eq!(index.match_app_id("app.zen_browser.zen").unwrap().name, "Zen Browser");
+        assert_eq!(
+            index.match_app_id("app.zen_browser.zen").unwrap().name,
+            "Zen Browser"
+        );
         // flatpak app id via wmclass
         assert_eq!(index.match_app_id("zen").unwrap().name, "Zen Browser");
         assert_eq!(index.match_exe("firefox").unwrap().name, "Firefox");

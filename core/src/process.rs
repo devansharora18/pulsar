@@ -52,12 +52,19 @@ impl Stat {
     pub fn parse(text: &str) -> Result<Self> {
         // comm is wrapped in the first '(' and the *last* ')' because it may itself
         // contain spaces and parentheses.
-        let open = text.find('(').ok_or_else(|| crate::Error::Parse("stat: no (".into()))?;
-        let close = text.rfind(')').ok_or_else(|| crate::Error::Parse("stat: no )".into()))?;
+        let open = text
+            .find('(')
+            .ok_or_else(|| crate::Error::Parse("stat: no (".into()))?;
+        let close = text
+            .rfind(')')
+            .ok_or_else(|| crate::Error::Parse("stat: no )".into()))?;
         if close < open {
             return Err(crate::Error::Parse("stat: bad parens".into()));
         }
-        let pid: i32 = text[..open].trim().parse().map_err(|_| crate::Error::Parse("stat: pid".into()))?;
+        let pid: i32 = text[..open]
+            .trim()
+            .parse()
+            .map_err(|_| crate::Error::Parse("stat: pid".into()))?;
         let comm = text[open + 1..close].to_string();
         // Fields after state: ppid is index 1 (state is index 0).
         let rest: Vec<&str> = text[close + 1..].split_whitespace().collect();
@@ -111,16 +118,48 @@ impl Status {
     pub fn parse(text: &str) -> Self {
         let mut s = Status::default();
         for line in text.lines() {
-            let Some((k, v)) = line.split_once(':') else { continue };
+            let Some((k, v)) = line.split_once(':') else {
+                continue;
+            };
             let v = v.trim();
             match k {
                 "Name" => s.name = v.to_string(),
                 "State" => s.state = v.chars().next().unwrap_or('?'),
-                "Uid" => s.uid = v.split_whitespace().next().and_then(|x| x.parse().ok()).unwrap_or(0),
-                "Gid" => s.gid = v.split_whitespace().next().and_then(|x| x.parse().ok()).unwrap_or(0),
-                "VmRSS" => s.vmrss = v.split_whitespace().next().and_then(|x| x.parse().ok()).unwrap_or(0),
-                "VmHWM" => s.vmhwm = v.split_whitespace().next().and_then(|x| x.parse().ok()).unwrap_or(0),
-                "VmSwap" => s.vmswap = v.split_whitespace().next().and_then(|x| x.parse().ok()).unwrap_or(0),
+                "Uid" => {
+                    s.uid = v
+                        .split_whitespace()
+                        .next()
+                        .and_then(|x| x.parse().ok())
+                        .unwrap_or(0)
+                }
+                "Gid" => {
+                    s.gid = v
+                        .split_whitespace()
+                        .next()
+                        .and_then(|x| x.parse().ok())
+                        .unwrap_or(0)
+                }
+                "VmRSS" => {
+                    s.vmrss = v
+                        .split_whitespace()
+                        .next()
+                        .and_then(|x| x.parse().ok())
+                        .unwrap_or(0)
+                }
+                "VmHWM" => {
+                    s.vmhwm = v
+                        .split_whitespace()
+                        .next()
+                        .and_then(|x| x.parse().ok())
+                        .unwrap_or(0)
+                }
+                "VmSwap" => {
+                    s.vmswap = v
+                        .split_whitespace()
+                        .next()
+                        .and_then(|x| x.parse().ok())
+                        .unwrap_or(0)
+                }
                 "Threads" => s.threads = v.parse().unwrap_or(0),
                 _ => {}
             }
@@ -149,7 +188,11 @@ impl Statm {
         let size = it.next()?.parse().ok()?;
         let resident = it.next()?.parse().ok()?;
         let shared = it.next().and_then(|x| x.parse().ok()).unwrap_or(0);
-        Some(Statm { size, resident, shared })
+        Some(Statm {
+            size,
+            resident,
+            shared,
+        })
     }
 
     pub fn rss_kb(&self) -> u64 {
@@ -199,7 +242,9 @@ impl IoCounters {
     pub fn parse(text: &str) -> Self {
         let mut io = IoCounters::default();
         for line in text.lines() {
-            let Some((k, v)) = line.split_once(':') else { continue };
+            let Some((k, v)) = line.split_once(':') else {
+                continue;
+            };
             let v = v.trim().parse().unwrap_or(0);
             match k {
                 "read_bytes" => io.read_bytes = v,
@@ -211,7 +256,9 @@ impl IoCounters {
     }
 
     pub fn read(pid: i32) -> Result<Self> {
-        Ok(Self::parse(&std::fs::read_to_string(format!("/proc/{pid}/io"))?))
+        Ok(Self::parse(&std::fs::read_to_string(format!(
+            "/proc/{pid}/io"
+        ))?))
     }
 }
 
@@ -266,6 +313,6 @@ mod tests {
         let io = IoCounters::parse("rchar: 31469\nwchar: 1119\nread_bytes: 0\nwrite_bytes: 4096\n");
         assert_eq!(io.read_bytes, 0);
         assert_eq!(io.write_bytes, 4096);
-        assert_eq!(Statm::parse("").is_none(), true);
+        assert!(Statm::parse("").is_none());
     }
 }

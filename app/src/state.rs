@@ -66,26 +66,10 @@ pub enum SortKey {
     Name,
     Cpu,
     Pss,
-    Rss,
     Io,
     Power,
     Pid,
     Threads,
-}
-
-impl SortKey {
-    pub fn label(&self) -> &'static str {
-        match self {
-            SortKey::Name => "Name",
-            SortKey::Cpu => "CPU",
-            SortKey::Pss => "Memory",
-            SortKey::Rss => "RSS",
-            SortKey::Io => "Disk",
-            SortKey::Power => "Power",
-            SortKey::Pid => "PID",
-            SortKey::Threads => "Thr",
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -143,7 +127,6 @@ pub struct AppState {
     pub cheat: Signal<bool>,
     pub confirm: Signal<Option<Pending>>,
     pub settings: Signal<bool>,
-    pub screenshot: Signal<bool>,
     pub selected: Signal<Option<String>>,
     /// Frozen sort order (keys) so rows do not jump while the user reads them.
     order: Signal<Vec<String>>,
@@ -179,7 +162,6 @@ impl AppState {
             cheat: Signal::new(false),
             confirm: Signal::new(None),
             settings: Signal::new(false),
-            screenshot: Signal::new(false),
             selected: Signal::new(None),
             order: Signal::new(Vec::new()),
             order_deadline: Signal::new(Instant::now()),
@@ -225,7 +207,8 @@ impl AppState {
         }
     }
 
-    pub fn toggle_pin(&self, key: &str) {        let mut p = self.pinned;
+    pub fn toggle_pin(&self, key: &str) {
+        let mut p = self.pinned;
         let mut v = p.write();
         if let Some(pos) = v.iter().position(|k| k == key) {
             v.remove(pos);
@@ -296,11 +279,16 @@ impl AppState {
         };
         let ord = match *self.sort.read() {
             SortKey::Name => ga.name.to_lowercase().cmp(&gb.name.to_lowercase()),
-            SortKey::Cpu => ga.cpu_pct.partial_cmp(&gb.cpu_pct).unwrap_or(Ordering::Equal),
+            SortKey::Cpu => ga
+                .cpu_pct
+                .partial_cmp(&gb.cpu_pct)
+                .unwrap_or(Ordering::Equal),
             SortKey::Pss => ga.pss.cmp(&gb.pss),
-            SortKey::Rss => ga.rss.cmp(&gb.rss),
             SortKey::Io => (ga.io_read + ga.io_write).cmp(&(gb.io_read + gb.io_write)),
-            SortKey::Power => ga.power_w.partial_cmp(&gb.power_w).unwrap_or(Ordering::Equal),
+            SortKey::Power => ga
+                .power_w
+                .partial_cmp(&gb.power_w)
+                .unwrap_or(Ordering::Equal),
             SortKey::Pid => ga.pids.first().cmp(&gb.pids.first()),
             SortKey::Threads => ga.count().cmp(&gb.count()),
         };
@@ -325,7 +313,10 @@ impl AppState {
                 .process_by_pid(*pid)
                 .map(|p| {
                     p.comm.to_lowercase().contains(&q)
-                        || p.cmdline.as_deref().map(|c| c.to_lowercase().contains(&q)).unwrap_or(false)
+                        || p.cmdline
+                            .as_deref()
+                            .map(|c| c.to_lowercase().contains(&q))
+                            .unwrap_or(false)
                 })
                 .unwrap_or(false)
         })
