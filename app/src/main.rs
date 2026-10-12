@@ -1,54 +1,91 @@
-mod components;
+//! Pulsar — TUI system monitor.
+
+mod dump;
 mod format;
-mod icon;
+mod overlays;
 mod state;
-mod theme_css;
+mod theme_map;
 mod treemap;
+mod ui;
 
-use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
-use dioxus::prelude::*;
+use std::time::Duration;
+
 use pulsar_core::sampler::Sampler;
-use std::path::PathBuf;
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 
-use components::overlays::Overlays;
-use components::sidebar::Sidebar;
-use components::titlebar::Titlebar;
-use components::views::Content;
-use state::{AppState, Cli, Pending, PendingKind, View, ViewMode, CLI};
+use state::{AppState, Cli, Overlay, Pending, PendingKind, SortKey, View, ViewMode, CLI};
 
 fn main() {
     pulsar_core::theme::Theme::seed_user_themes();
     let cli = parse_cli(std::env::args().skip(1));
-    let screenshot = cli.screenshot.clone();
-    let delay = cli.delay_secs.max(3);
+    let dump = cli.dump_dir.clone();
+    let is_dump = dump.is_some();
+    let png = cli.png;
     let _ = CLI.set(cli);
 
-    if let Some(path) = screenshot {
-        spawn_capture(path, delay);
+    let (rx, _handle) = {
+        let mut scfg = AppState::new().config.clone();
+        // In dump mode sample fast so the history graphs are full for the capture.
+        if is_dump {
+            scfg.refresh_ms = 100;
+        }
+        Sampler::spawn(scfg)
+    };
+
+    if let Some(dir) = dump {
+        dump::run(dir, png, rx);
+        return;
     }
 
-    let cfg = Config::new()
-        .with_window(
-            WindowBuilder::new()
-                .with_title("Pulsar")
-                .with_decorations(false)
-                .with_transparent(true)
-                .with_inner_size(LogicalSize::new(1180.0, 780.0))
-                .with_min_inner_size(LogicalSize::new(820.0, 520.0)),
-        )
-        .with_background_color((0, 0, 0, 0));
-    dioxus::LaunchBuilder::desktop().with_cfg(cfg).launch(App);
+    let mut terminal = ratatui::init();
+    let mut state = AppState::new();
+    let result = run(&mut terminal, &mut state, rx);
+    ratatui::restore();
+    if let Err(e) = result {
+        eprintln!("pulsar: {e}");
+        std::process::exit(1);
+    }
+}
+
+fn run(
+    terminal: &mut ratatui::DefaultTerminal,
+    state: &mut AppState,
+    mut rx: tokio::sync::watch::Receiver<pulsar_core::snapshot::SystemSnapshot>,
+) -> std::io::Result<()> {
+    if rx.has_changed().unwrap_or(false) {
+        state.snapshot = rx.borrow_and_update().clone();
+    }
+    loop {
+        // Ingest the latest snapshot without blocking.
+        if rx.has_changed().unwrap_or(false) {
+            state.snapshot = rx.borrow_and_update().clone();
+            if CLI.get().map(|c| c.once).unwrap_or(false) {
+                state.should_quit = true;
+            }
+        }
+        terminal.draw(|f| ui::draw(f, state))?;
+        if state.should_quit {
+            break;
+        }
+        if event::poll(Duration::from_millis(80))? {
+            match event::read()? {
+                Event::Key(k) => handle_key(state, k),
+                Event::Resize(_, _) => {}
+                _ => {}
+            }
+        }
+    }
+    Ok(())
 }
 
 fn parse_cli(args: impl Iterator<Item = String>) -> Cli {
-    let mut cli = Cli {
-        delay_secs: 4,
-        ..Default::default()
-    };
+    let mut cli = Cli::default();
     let mut it = args.peekable();
     while let Some(a) = it.next() {
         match a.as_str() {
-            "--screenshot" => cli.screenshot = it.next().map(PathBuf::from),
+            "--dump" => cli.dump_dir = it.next().map(std::path::PathBuf::from),
+            "--png" => cli.png = true,
+            "--once" => cli.once = true,
             "--theme" => cli.theme = it.next(),
             "--view" => {
                 cli.view = it.next().and_then(|v| match v.as_str() {
@@ -59,270 +96,346 @@ fn parse_cli(args: impl Iterator<Item = String>) -> Cli {
                     _ => None,
                 })
             }
-            "--expand" => cli.expand = true,
-            "--delay" => cli.delay_secs = it.next().and_then(|v| v.parse().ok()).unwrap_or(4),
+            "--help" | "-h" => {
+                println!("pulsar [--theme NAME] [--view overview|processes|memory|power] [--dump DIR] [--png]");
+                std::process::exit(0);
+            }
             _ => {}
         }
     }
     cli
 }
 
-/// In `--screenshot` mode, wait for the UI to populate, capture the screen, then exit.
-///
-/// Capture is compositor-dependent. The chain is: an explicit `PULSAR_CAPTURE_CMD`
-/// (with `{}` replaced by the path), then `gnome-screenshot`, `grim` (wlroots), then
-/// ImageMagick `import`/`ffmpeg` on X11. On GNOME Wayland `grim` lacks the capture
-/// protocol and the Shell screenshot is denied to apps — see docs/TODO.md.
-fn spawn_capture(path: PathBuf, delay_secs: u64) {
-    std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_secs(delay_secs));
-        if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-        if capture(&path) {
-            eprintln!("pulsar: captured {}", path.display());
-        } else {
-            eprintln!(
-                "pulsar: screen capture unavailable on this session; see docs/TODO.md \
-                 (set PULSAR_CAPTURE_CMD or install gnome-screenshot)"
-            );
-        }
-        std::process::exit(0);
-    });
-}
-
-fn capture(path: &std::path::Path) -> bool {
-    if let Ok(cmd) = std::env::var("PULSAR_CAPTURE_CMD") {
-        let cmd = cmd.replace("{}", &path.display().to_string());
-        if std::process::Command::new("sh")
-            .args(["-c", &cmd])
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
-        {
-            return true;
-        }
-    }
-    let on_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
-    let attempts: Vec<(&str, Vec<String>)> = if on_wayland {
-        vec![
-            (
-                "gnome-screenshot",
-                vec!["-f".into(), path.display().to_string()],
-            ),
-            ("grim", vec![path.display().to_string()]),
-        ]
-    } else {
-        vec![
-            (
-                "import",
-                vec!["-window".into(), "root".into(), path.display().to_string()],
-            ),
-            (
-                "ffmpeg",
-                vec![
-                    "-hide_banner".into(),
-                    "-loglevel".into(),
-                    "error".into(),
-                    "-f".into(),
-                    "x11grab".into(),
-                    "-i".into(),
-                    ":0".into(),
-                    "-frames:v".into(),
-                    "1".into(),
-                    "-y".into(),
-                    path.display().to_string(),
-                ],
-            ),
-        ]
-    };
-    for (bin, args) in attempts {
-        match std::process::Command::new(bin).args(&args).status() {
-            Ok(s) if s.success() && path.exists() => return true,
-            _ => continue,
-        }
-    }
-    false
-}
-
-#[component]
-fn App() -> Element {
-    let state = use_context_provider(AppState::new);
-    let rx = use_hook(|| Sampler::spawn(state.config_snapshot()).0);
-
-    // Pump snapshots from the sampler thread into the Dioxus signal.
-    use_future(move || {
-        let mut rx = rx.clone();
-        async move {
-            loop {
-                if rx.changed().await.is_err() {
-                    break;
-                }
-                let snap = rx.borrow_and_update().clone();
-                let mut s = state.snapshot;
-                s.set(snap);
-                // In screenshot mode, reveal a few groups so the capture shows expansion.
-                if CLI.get().map(|c| c.expand).unwrap_or(false) && state.expanded.read().is_empty()
-                {
-                    let snap = state.snapshot.read();
-                    let keys: Vec<String> =
-                        snap.groups.iter().take(4).map(|g| g.key.clone()).collect();
-                    drop(snap);
-                    let mut e = state.expanded;
-                    let mut set = e.write();
-                    for k in keys {
-                        set.insert(k);
-                    }
-                }
+fn handle_key(state: &mut AppState, k: KeyEvent) {
+    // Search input mode consumes most keys.
+    if state.search_active {
+        match k.code {
+            KeyCode::Esc => {
+                state.search_active = false;
+                state.search.clear();
             }
-        }
-    });
-
-    // Hot-reload config/theme on file change.
-    use_future(move || async move {
-        let mut last: Option<std::time::SystemTime> = None;
-        loop {
-            tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
-            let path = pulsar_core::config::Config::config_path();
-            let mtime = std::fs::metadata(&path)
-                .ok()
-                .and_then(|m| m.modified().ok());
-            if mtime != last {
-                last = mtime;
-                state.reload_config();
+            KeyCode::Enter => state.search_active = false,
+            KeyCode::Backspace => {
+                state.search.pop();
             }
-        }
-    });
-
-    rsx! {
-        document::Stylesheet { href: asset!("/assets/main.css") }
-        style { dangerous_inner_html: "{state.css()}" }
-        div {
-            class: "window",
-            tabindex: "0",
-            onmounted: move |e| {
-                focus_window(e);
-            },
-            onkeydown: move |e| handle_key(state, &e),
-            Titlebar {}
-            div { class: "body",
-                Sidebar {}
-                Content {}
+            KeyCode::Char(c) if !k.modifiers.contains(KeyModifiers::CONTROL) => {
+                state.search.push(c);
             }
-            Overlays {}
-        }
-    }
-}
-
-#[allow(clippy::let_underscore_future)]
-fn focus_window(e: Event<MountedData>) {
-    let _ = e.set_focus(true);
-}
-
-fn handle_key(state: AppState, e: &KeyboardData) {
-    // Ignore keys while typing in the search box (except Escape).
-    let typing = *state.search_open.read();
-    let key = e.key();
-    match key {
-        Key::Escape => {
-            let mut s = state.search_open;
-            s.set(false);
-            let mut c = state.cheat;
-            c.set(false);
-            let mut d = state.drawer;
-            d.set(None);
-            let mut set = state.settings;
-            set.set(false);
-        }
-        Key::Character(ref c) if typing && c != "/" => {}
-        Key::Character(ref c) => match c.as_str() {
-            "1" => set_view(state, View::Overview),
-            "2" => set_view(state, View::Processes),
-            "3" => set_view(state, View::Memory),
-            "4" => set_view(state, View::Power),
-            "/" => {
-                let mut s = state.search_open;
-                s.set(true);
-            }
-            "?" => {
-                let mut c = state.cheat;
-                let v = *c.read();
-                c.set(!v);
-            }
-            "s" => {
-                let mut s = state.settings;
-                let v = *s.read();
-                s.set(!v);
-            }
-            "a" => {
-                let mut d = state.drawer;
-                d.set(Some(state::Drawer::Activity));
-            }
-            "r" => state.reload_config(),
-            "g" => {
-                let mut m = state.view_mode;
-                m.set(ViewMode::Group);
-            }
-            "f" => {
-                let mut m = state.view_mode;
-                m.set(ViewMode::Flat);
-            }
-            "t" => {
-                let mut m = state.view_mode;
-                m.set(ViewMode::Tree);
-            }
-            "j" => move_selection(state, 1),
-            "k" => move_selection(state, -1),
-            "x" => kill_selected(state),
             _ => {}
-        },
-        Key::Enter => {
-            if let Some(key) = state.selected.read().clone() {
+        }
+        return;
+    }
+
+    // Confirmation modal.
+    if let Some(pending) = state.confirm.clone() {
+        match k.code {
+            KeyCode::Char('y') | KeyCode::Char('Y') => {
+                confirm(state, &pending);
+                state.confirm = None;
+            }
+            KeyCode::Char('n') | KeyCode::Esc => state.confirm = None,
+            _ => {}
+        }
+        return;
+    }
+
+    // Overlays.
+    if state.overlay == Some(Overlay::Settings) {
+        settings_key(state, k);
+        return;
+    }
+    if state.overlay.is_some() {
+        if matches!(
+            k.code,
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('a') | KeyCode::Char('?')
+        ) {
+            state.overlay = None;
+        }
+        return;
+    }
+
+    match k.code {
+        KeyCode::Char('q') => state.should_quit = true,
+        KeyCode::Char('c') if k.modifiers.contains(KeyModifiers::CONTROL) => {
+            state.should_quit = true
+        }
+        KeyCode::Esc => {
+            state.selected = None;
+            state.search.clear();
+        }
+        KeyCode::Tab => next_view(state),
+        KeyCode::Char('1') => state.view = View::Overview,
+        KeyCode::Char('2') => state.view = View::Processes,
+        KeyCode::Char('3') => state.view = View::Memory,
+        KeyCode::Char('4') => state.view = View::Power,
+        KeyCode::Char('/') => {
+            state.search_active = true;
+            state.view = View::Processes;
+        }
+        KeyCode::Char('?') => state.overlay = Some(Overlay::Help),
+        KeyCode::Char('a') => state.overlay = Some(Overlay::Activity),
+        KeyCode::Char('s') => state.overlay = Some(Overlay::Settings),
+        KeyCode::Char('r') => state.reload_config(),
+        KeyCode::Char('g') => ready_new_mode(state, ViewMode::Group),
+        KeyCode::Char('f') => ready_new_mode(state, ViewMode::Flat),
+        KeyCode::Char('t') if state.view == View::Processes => {
+            ready_new_mode(state, ViewMode::Tree)
+        }
+        KeyCode::Char('S') => cycle_sort(state, false),
+        KeyCode::Char('R') => cycle_sort(state, true),
+        KeyCode::Char('h') => {
+            state.hide_kernel = !state.hide_kernel;
+            state.force_reorder();
+        }
+        KeyCode::Char('j') | KeyCode::Down => move_selection(state, 1),
+        KeyCode::Char('k') | KeyCode::Up => move_selection(state, -1),
+        KeyCode::Enter => {
+            if let Some(key) = state.selected.clone() {
                 state.toggle_expanded(&key);
+            }
+        }
+        _ => view_action_keys(state, k),
+    }
+}
+
+fn view_action_keys(state: &mut AppState, k: KeyEvent) {
+    match state.view {
+        View::Processes => process_keys(state, k),
+        View::Memory => memory_keys(state, k),
+        _ => {}
+    }
+}
+
+fn process_keys(state: &mut AppState, k: KeyEvent) {
+    let Some(g) = state.selected_group().cloned() else {
+        return;
+    };
+    let pids = g.pids.clone();
+    match k.code {
+        KeyCode::Char('x') => {
+            state.confirm = Some(Pending {
+                kind: PendingKind::KillGroup,
+                label: g.label(),
+                detail: "SIGTERM now, then SIGKILL for any survivors after 3s.".into(),
+                pids,
+            });
+        }
+        KeyCode::Char('k') => {
+            state.confirm = Some(Pending {
+                kind: PendingKind::KillGroup,
+                label: g.label(),
+                detail: "SIGTERM now, then SIGKILL for any survivors after 3s.".into(),
+                pids,
+            });
+        }
+        KeyCode::Char('t') => state.log(pulsar_core::actions::terminate(&pids)),
+        KeyCode::Char('z') => state.log(pulsar_core::actions::suspend(&pids)),
+        KeyCode::Char('u') => state.log(pulsar_core::actions::resume(&pids)),
+        KeyCode::Char('p') => state.toggle_pin(&g.key),
+        KeyCode::Char('o') => {
+            if let Some(exe) = first_exe(state, &g) {
+                state.log(pulsar_core::actions::open_exe_location(&exe));
+            }
+        }
+        KeyCode::Char('+') | KeyCode::Char('=') => {
+            if let Some(pid) = g.pids.first() {
+                state.log(pulsar_core::actions::renice(*pid, -5));
+            }
+        }
+        KeyCode::Char('-') => {
+            if let Some(pid) = g.pids.first() {
+                state.log(pulsar_core::actions::renice(*pid, 5));
             }
         }
         _ => {}
     }
 }
 
-fn set_view(state: AppState, v: View) {
-    let mut view = state.view;
-    view.set(v);
+fn first_exe(state: &AppState, g: &pulsar_core::group::Group) -> Option<String> {
+    g.pids
+        .first()
+        .and_then(|pid| state.snapshot.process_by_pid(*pid))
+        .and_then(|p| p.exe.clone())
 }
 
-fn ordered_keys(state: AppState) -> Vec<String> {
-    let snapshot = state.snapshot.read();
-    state.order_for(&snapshot.groups)
+fn memory_keys(state: &mut AppState, k: KeyEvent) {
+    match k.code {
+        KeyCode::Char('c') => {
+            state.confirm = Some(priviledged(PendingKind::DropCaches, "Drop clean caches",
+                "Runs `sync; echo 1 > /proc/sys/vm/drop_caches` via pkexec. Frees only already-clean page cache; the kernel re-reads files, so IO may spike. Does not free tmpfs or swap."));
+        }
+        KeyCode::Char('C') => {
+            state.confirm = Some(priviledged(PendingKind::DropCachesAll, "Drop caches + dentries + inodes",
+                "Runs `sync; echo 3 > /proc/sys/vm/drop_caches`. More aggressive; directory traversal slows until caches rebuild."));
+        }
+        KeyCode::Char('m') => {
+            state.confirm = Some(priviledged(
+                PendingKind::Compact,
+                "Compact memory",
+                "Runs `echo 1 > /proc/sys/vm/compact_memory`. Defragments physical memory.",
+            ));
+        }
+        KeyCode::Char('w') => {
+            if pulsar_core::actions::swap_flush_blocker(&state.snapshot.mem).is_none() {
+                state.confirm = Some(priviledged(PendingKind::FlushSwap, "Flush swap",
+                    "Runs `swapoff -a && swapon -a` via pkexec. Reads every swapped page back into RAM; it will freeze briefly."));
+            } else {
+                state.set_message("flush swap disabled: not enough free RAM to swap back in");
+            }
+        }
+        KeyCode::Char('p') if !state.snapshot.rapl_readable => {
+            state.confirm = Some(priviledged(PendingKind::EnablePower, "Enable power metrics",
+                "Writes a udev rule (99-pulsar-rapl.rules) making /sys/class/powercap/*/energy_uj readable by the wheel group, then reloads udev. Enables measured RAPL wattage."));
+        }
+        _ => {}
+    }
 }
 
-fn move_selection(state: AppState, delta: i32) {
-    let keys = ordered_keys(state);
+fn priviledged(kind: PendingKind, label: &str, detail: &str) -> Pending {
+    Pending {
+        kind,
+        label: label.to_string(),
+        detail: detail.to_string(),
+        pids: Vec::new(),
+    }
+}
+
+fn confirm(state: &mut AppState, pending: &Pending) {
+    match pending.kind {
+        PendingKind::KillGroup => {
+            let r = pulsar_core::actions::terminate_then_kill(
+                pending.pids.clone(),
+                std::time::Duration::from_secs(3),
+            );
+            state.log(r);
+        }
+        PendingKind::FlushSwap => state.log(pulsar_core::actions::flush_swap()),
+        PendingKind::DropCaches => state.log(pulsar_core::actions::drop_caches()),
+        PendingKind::DropCachesAll => state.log(pulsar_core::actions::drop_caches_all()),
+        PendingKind::Compact => state.log(pulsar_core::actions::compact_memory()),
+        PendingKind::EnablePower => state.log(pulsar_core::actions::enable_power_metrics()),
+    }
+}
+
+fn settings_key(state: &mut AppState, k: KeyEvent) {
+    match k.code {
+        KeyCode::Esc | KeyCode::Char('s') => state.overlay = None,
+        KeyCode::Char('t') => {
+            let names = pulsar_core::theme::Theme::builtin_names();
+            let idx = names
+                .iter()
+                .position(|n| *n == state.config.theme)
+                .map(|i| (i + 1) % names.len())
+                .unwrap_or(0);
+            state.config.theme = names[idx].to_string();
+            state.theme = pulsar_core::theme::Theme::resolve(&state.config.theme);
+            state.palette = crate::theme_map::Palette::from_theme(&state.theme);
+        }
+        KeyCode::Char(']') => {
+            state.config.refresh_ms = (state.config.refresh_ms + 100).min(5000);
+        }
+        KeyCode::Char('[') => {
+            state.config.refresh_ms = state.config.refresh_ms.saturating_sub(100).max(500);
+        }
+        KeyCode::Char('+') | KeyCode::Char('=') => {
+            state.config.opacity = (state.config.opacity + 0.05).min(1.0);
+        }
+        KeyCode::Char('-') => {
+            state.config.opacity = (state.config.opacity - 0.05).max(0.5);
+        }
+        KeyCode::Char('h') => {
+            state.config.hide_kernel_threads = !state.config.hide_kernel_threads;
+            state.hide_kernel = state.config.hide_kernel_threads;
+        }
+        KeyCode::Char('K') => state.config.confirm_kill = !state.config.confirm_kill,
+        KeyCode::Char('d') => {
+            state.config.density = match state.config.density {
+                pulsar_core::config::Density::Compact => pulsar_core::config::Density::Comfy,
+                pulsar_core::config::Density::Comfy => pulsar_core::config::Density::Compact,
+            };
+        }
+        KeyCode::Char('S') => {
+            let r = match state.config.save() {
+                Ok(_) => pulsar_core::actions::ActionResult {
+                    action: "save-config".into(),
+                    target: "config.toml".into(),
+                    ok: true,
+                    message: format!(
+                        "saved to {}",
+                        pulsar_core::config::Config::config_path().display()
+                    ),
+                    privileged: false,
+                },
+                Err(e) => pulsar_core::actions::ActionResult {
+                    action: "save-config".into(),
+                    target: "config.toml".into(),
+                    ok: false,
+                    message: format!("{e}"),
+                    privileged: false,
+                },
+            };
+            state.log(r);
+        }
+        KeyCode::Char('w') => {
+            let dir = pulsar_core::theme::Theme::theme_dir();
+            let _ = std::fs::create_dir_all(&dir);
+            let path = dir.join(format!("{}.toml", state.config.theme));
+            let r = match std::fs::write(&path, state.theme.to_toml()) {
+                Ok(_) => pulsar_core::actions::ActionResult {
+                    action: "write-theme".into(),
+                    target: path.display().to_string(),
+                    ok: true,
+                    message: "written".into(),
+                    privileged: false,
+                },
+                Err(e) => pulsar_core::actions::ActionResult {
+                    action: "write-theme".into(),
+                    target: path.display().to_string(),
+                    ok: false,
+                    message: format!("{e}"),
+                    privileged: false,
+                },
+            };
+            state.log(r);
+        }
+        _ => {}
+    }
+}
+
+fn next_view(state: &mut AppState) {
+    let all = View::all();
+    let idx = all.iter().position(|v| *v == state.view).unwrap_or(0);
+    state.view = all[(idx + 1) % all.len()];
+}
+
+fn ready_new_mode(state: &mut AppState, mode: ViewMode) {
+    state.view_mode = mode;
+    state.force_reorder();
+}
+
+fn cycle_sort(state: &mut AppState, reverse: bool) {
+    if reverse {
+        state.sort_desc = !state.sort_desc;
+        state.force_reorder();
+        return;
+    }
+    let all = SortKey::all();
+    let idx = all.iter().position(|k| *k == state.sort).unwrap_or(0);
+    state.sort = all[(idx + 1) % all.len()];
+    state.force_reorder();
+}
+
+fn move_selection(state: &mut AppState, delta: i32) {
+    let keys = state.visible_keys();
     if keys.is_empty() {
         return;
     }
-    let current = state.selected.read().clone();
-    let idx = current
-        .and_then(|k| keys.iter().position(|x| *x == k))
+    let idx = state
+        .selected
+        .as_ref()
+        .and_then(|k| keys.iter().position(|x| x == k))
         .map(|i| i as i32)
         .unwrap_or(-1);
     let next = ((idx + delta).rem_euclid(keys.len() as i32)) as usize;
-    let mut sel = state.selected;
-    sel.set(Some(keys[next].clone()));
-}
-
-fn kill_selected(state: AppState) {
-    let Some(key) = state.selected.read().clone() else {
-        return;
-    };
-    let snapshot = state.snapshot.read();
-    let group = snapshot.groups.iter().find(|g| g.key == key);
-    if let Some(g) = group {
-        let mut c = state.confirm;
-        c.set(Some(Pending {
-            kind: PendingKind::KillGroup,
-            label: g.label(),
-            detail: "SIGTERM, then SIGKILL after 3s for survivors.".into(),
-            pids: g.pids.clone(),
-        }));
-    }
+    state.selected = Some(keys[next].clone());
 }

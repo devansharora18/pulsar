@@ -1,18 +1,17 @@
-//! Shared UI state: signals for the snapshot, view, filters and pending actions.
+//! Application state for the TUI (plain struct, no framework).
 
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::Instant;
 
-use dioxus::prelude::*;
 use pulsar_core::actions::ActionResult;
 use pulsar_core::config::Config;
 use pulsar_core::group::Group;
 use pulsar_core::snapshot::SystemSnapshot;
 use pulsar_core::theme::Theme;
 
-use crate::theme_css::theme_css;
+use crate::theme_map::Palette;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum View {
@@ -26,20 +25,12 @@ impl View {
     pub fn all() -> [View; 4] {
         [View::Overview, View::Processes, View::Memory, View::Power]
     }
-    pub fn label(&self) -> &'static str {
+    pub fn label(self) -> &'static str {
         match self {
             View::Overview => "Overview",
             View::Processes => "Processes",
             View::Memory => "Memory",
             View::Power => "Power",
-        }
-    }
-    pub fn icon(&self) -> &'static str {
-        match self {
-            View::Overview => "◱",
-            View::Processes => "≡",
-            View::Memory => "▦",
-            View::Power => "⚡",
         }
     }
 }
@@ -52,11 +43,11 @@ pub enum ViewMode {
 }
 
 impl ViewMode {
-    pub fn label(&self) -> &'static str {
+    pub fn label(self) -> &'static str {
         match self {
-            ViewMode::Group => "Group",
-            ViewMode::Flat => "Flat",
-            ViewMode::Tree => "Tree",
+            ViewMode::Group => "group",
+            ViewMode::Flat => "flat",
+            ViewMode::Tree => "tree",
         }
     }
 }
@@ -69,11 +60,34 @@ pub enum SortKey {
     Io,
     Power,
     Pid,
-    Threads,
+}
+
+impl SortKey {
+    pub fn label(self) -> &'static str {
+        match self {
+            SortKey::Name => "Name",
+            SortKey::Cpu => "CPU",
+            SortKey::Pss => "Memory",
+            SortKey::Io => "Disk",
+            SortKey::Power => "Power",
+            SortKey::Pid => "PID",
+        }
+    }
+    pub fn all() -> [SortKey; 6] {
+        [
+            SortKey::Pss,
+            SortKey::Cpu,
+            SortKey::Name,
+            SortKey::Io,
+            SortKey::Power,
+            SortKey::Pid,
+        ]
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Drawer {
+pub enum Overlay {
+    Help,
     Activity,
     Settings,
 }
@@ -88,7 +102,7 @@ pub enum PendingKind {
     EnablePower,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Pending {
     pub kind: PendingKind,
     pub label: String,
@@ -98,40 +112,38 @@ pub struct Pending {
 
 #[derive(Debug, Clone, Default)]
 pub struct Cli {
-    pub screenshot: Option<PathBuf>,
+    pub dump_dir: Option<PathBuf>,
+    pub png: bool,
     pub theme: Option<String>,
     pub view: Option<View>,
-    pub expand: bool,
-    pub delay_secs: u64,
+    pub once: bool,
 }
 
-/// Parsed command line, set once in `main`.
 pub static CLI: OnceLock<Cli> = OnceLock::new();
 
-#[derive(Clone, Copy)]
 pub struct AppState {
-    pub snapshot: Signal<SystemSnapshot>,
-    pub config: Signal<Config>,
-    pub theme: Signal<Theme>,
-    pub view: Signal<View>,
-    pub search: Signal<String>,
-    pub search_open: Signal<bool>,
-    pub sort: Signal<SortKey>,
-    pub sort_desc: Signal<bool>,
-    pub expanded: Signal<HashSet<String>>,
-    pub pinned: Signal<Vec<String>>,
-    pub view_mode: Signal<ViewMode>,
-    pub hide_kernel: Signal<bool>,
-    pub activity: Signal<Vec<ActionResult>>,
-    pub drawer: Signal<Option<Drawer>>,
-    pub cheat: Signal<bool>,
-    pub confirm: Signal<Option<Pending>>,
-    pub settings: Signal<bool>,
-    pub selected: Signal<Option<String>>,
-    /// Frozen sort order (keys) so rows do not jump while the user reads them.
-    order: Signal<Vec<String>>,
-    order_deadline: Signal<Instant>,
-    order_params: Signal<(SortKey, bool, ViewMode, bool)>,
+    pub config: Config,
+    pub theme: Theme,
+    pub palette: Palette,
+    pub snapshot: SystemSnapshot,
+    pub view: View,
+    pub view_mode: ViewMode,
+    pub sort: SortKey,
+    pub sort_desc: bool,
+    pub search: String,
+    pub search_active: bool,
+    pub expanded: HashSet<String>,
+    pub pinned: Vec<String>,
+    pub hide_kernel: bool,
+    pub selected: Option<String>,
+    pub activity: Vec<ActionResult>,
+    pub confirm: Option<Pending>,
+    pub overlay: Option<Overlay>,
+    pub message: Option<(String, Instant)>,
+    pub should_quit: bool,
+    order: Vec<String>,
+    order_deadline: Instant,
+    order_params: (SortKey, bool, ViewMode, bool),
 }
 
 impl AppState {
@@ -142,121 +154,113 @@ impl AppState {
             config.theme = t;
         }
         let theme = Theme::resolve(&config.theme);
+        let palette = Palette::from_theme(&theme);
+        let view = cli.and_then(|c| c.view).unwrap_or(View::Overview);
         let hide_kernel = config.hide_kernel_threads;
-        let initial_view = cli.and_then(|c| c.view).unwrap_or(View::Overview);
         AppState {
-            snapshot: Signal::new(SystemSnapshot::default()),
-            config: Signal::new(config),
-            theme: Signal::new(theme),
-            view: Signal::new(initial_view),
-            search: Signal::new(String::new()),
-            search_open: Signal::new(false),
-            sort: Signal::new(SortKey::Pss),
-            sort_desc: Signal::new(true),
-            expanded: Signal::new(HashSet::new()),
-            pinned: Signal::new(Vec::new()),
-            view_mode: Signal::new(ViewMode::Group),
-            hide_kernel: Signal::new(hide_kernel),
-            activity: Signal::new(Vec::new()),
-            drawer: Signal::new(None),
-            cheat: Signal::new(false),
-            confirm: Signal::new(None),
-            settings: Signal::new(false),
-            selected: Signal::new(None),
-            order: Signal::new(Vec::new()),
-            order_deadline: Signal::new(Instant::now()),
-            order_params: Signal::new((SortKey::Pss, true, ViewMode::Group, false)),
+            config,
+            theme,
+            palette,
+            snapshot: SystemSnapshot::default(),
+            view,
+            view_mode: ViewMode::Group,
+            sort: SortKey::Pss,
+            sort_desc: true,
+            search: String::new(),
+            search_active: false,
+            expanded: HashSet::new(),
+            pinned: Vec::new(),
+            hide_kernel,
+            selected: None,
+            activity: Vec::new(),
+            confirm: None,
+            overlay: None,
+            message: None,
+            should_quit: false,
+            order: Vec::new(),
+            order_deadline: Instant::now(),
+            order_params: (SortKey::Pss, true, ViewMode::Group, false),
         }
     }
 
-    pub fn css(&self) -> String {
-        let cfg = self.config.read();
-        let theme = self.theme.read();
-        theme_css(&theme, &cfg)
+    pub fn set_message(&mut self, m: impl Into<String>) {
+        self.message = Some((m.into(), Instant::now()));
     }
 
-    pub fn config_snapshot(&self) -> Config {
-        self.config.read().clone()
+    pub fn current_message(&self) -> Option<&str> {
+        self.message
+            .as_ref()
+            .filter(|(_, t)| t.elapsed().as_secs() < 6)
+            .map(|(m, _)| m.as_str())
     }
 
-    pub fn theme_snapshot(&self) -> Theme {
-        self.theme.read().clone()
-    }
-
-    pub fn reload_config(&self) {
+    pub fn reload_config(&mut self) {
         let cfg = Config::load();
-        let theme = Theme::resolve(&cfg.theme);
-        let mut c = self.config;
-        c.set(cfg);
-        let mut t = self.theme;
-        t.set(theme);
+        self.theme = Theme::resolve(&cfg.theme);
+        self.palette = Palette::from_theme(&self.theme);
+        self.hide_kernel = cfg.hide_kernel_threads;
+        self.config = cfg;
+        self.set_message("config reloaded");
     }
 
-    pub fn log(&self, r: ActionResult) {
-        let mut a = self.activity;
-        a.write().push(r);
-    }
-
-    pub fn toggle_expanded(&self, key: &str) {
-        let mut e = self.expanded;
-        let mut set = e.write();
-        if set.contains(key) {
-            set.remove(key);
-        } else {
-            set.insert(key.to_string());
+    pub fn log(&mut self, r: ActionResult) {
+        self.set_message(format!("{}: {}", r.action, r.message));
+        self.activity.push(r);
+        if self.activity.len() > 500 {
+            self.activity.remove(0);
         }
     }
 
-    pub fn toggle_pin(&self, key: &str) {
-        let mut p = self.pinned;
-        let mut v = p.write();
-        if let Some(pos) = v.iter().position(|k| k == key) {
-            v.remove(pos);
-        } else {
-            v.push(key.to_string());
+    pub fn toggle_expanded(&mut self, key: &str) {
+        if !self.expanded.remove(key) {
+            self.expanded.insert(key.to_string());
         }
     }
 
-    /// Force the sort order to be recomputed on the next render (after a header click).
-    pub fn force_reorder(&self) {
-        let mut d = self.order_deadline;
-        d.set(Instant::now() - std::time::Duration::from_millis(1));
+    pub fn toggle_pin(&mut self, key: &str) {
+        if let Some(pos) = self.pinned.iter().position(|k| k == key) {
+            self.pinned.remove(pos);
+        } else {
+            self.pinned.push(key.to_string());
+        }
     }
 
-    /// Whether the current filter/sort parameters changed the ordering.
+    pub fn is_pinned(&self, key: &str) -> bool {
+        self.pinned.iter().any(|k| k == key)
+    }
+
+    /// The selected group, if any.
+    pub fn selected_group(&self) -> Option<&Group> {
+        let key = self.selected.as_ref()?;
+        self.snapshot.groups.iter().find(|g| &g.key == key)
+    }
+
+    pub fn force_reorder(&mut self) {
+        self.order_deadline = Instant::now() - std::time::Duration::from_millis(1);
+    }
+
     fn params(&self) -> (SortKey, bool, ViewMode, bool) {
-        (
-            *self.sort.read(),
-            *self.sort_desc.read(),
-            *self.view_mode.read(),
-            *self.hide_kernel.read(),
-        )
+        (self.sort, self.sort_desc, self.view_mode, self.hide_kernel)
     }
 
-    /// Return group keys in display order, freezing for 1s after a change so the list is
-    /// stable while the user points at it.
-    pub fn order_for(&self, groups: &[Group]) -> Vec<String> {
+    /// Ordered group keys, frozen for 1 s after a change so rows do not jump under the
+    /// cursor.
+    pub fn order_for(&mut self, groups: &[Group]) -> Vec<String> {
         let params = self.params();
         let now = Instant::now();
-        let changed = *self.order_params.read() != params;
-        let expired = now >= *self.order_deadline.read();
-        if changed || expired || self.order.read().is_empty() {
+        if params != self.order_params || now >= self.order_deadline || self.order.is_empty() {
             let mut keys: Vec<String> = groups.iter().map(|g| g.key.clone()).collect();
             keys.sort_by(|a, b| self.compare_keys(a, b, groups));
-            if *self.sort_desc.read() {
+            if self.sort_desc {
                 keys.reverse();
             }
-            let mut o = self.order;
-            o.set(keys.clone());
-            let mut d = self.order_deadline;
-            d.set(now + std::time::Duration::from_millis(1000));
-            let mut p = self.order_params;
-            p.set(params);
+            self.order = keys.clone();
+            self.order_deadline = now + std::time::Duration::from_millis(1000);
+            self.order_params = params;
             keys
         } else {
-            // Reuse the frozen order, appending keys we have not seen yet.
-            let existing = self.order.read().clone();
-            let mut out: Vec<String> = existing
+            let mut out: Vec<String> = self
+                .order
                 .iter()
                 .filter(|k| groups.iter().any(|g| &g.key == *k))
                 .cloned()
@@ -272,12 +276,13 @@ impl AppState {
 
     fn compare_keys(&self, a: &str, b: &str, groups: &[Group]) -> std::cmp::Ordering {
         use std::cmp::Ordering;
-        let ga = groups.iter().find(|g| g.key == a);
-        let gb = groups.iter().find(|g| g.key == b);
-        let (Some(ga), Some(gb)) = (ga, gb) else {
+        let (Some(ga), Some(gb)) = (
+            groups.iter().find(|g| g.key == a),
+            groups.iter().find(|g| g.key == b),
+        ) else {
             return a.cmp(b);
         };
-        let ord = match *self.sort.read() {
+        let ord = match self.sort {
             SortKey::Name => ga.name.to_lowercase().cmp(&gb.name.to_lowercase()),
             SortKey::Cpu => ga
                 .cpu_pct
@@ -290,18 +295,15 @@ impl AppState {
                 .partial_cmp(&gb.power_w)
                 .unwrap_or(Ordering::Equal),
             SortKey::Pid => ga.pids.first().cmp(&gb.pids.first()),
-            SortKey::Threads => ga.count().cmp(&gb.count()),
         };
-        // Stable tie-break so equal rows never swap.
         ord.then_with(|| a.cmp(b))
     }
 
-    /// Filter a group against the current search box and kernel-thread toggle.
     pub fn passes_filter(&self, g: &Group, snapshot: &SystemSnapshot) -> bool {
-        if *self.hide_kernel.read() && g.is_kernel {
+        if self.hide_kernel && g.is_kernel {
             return false;
         }
-        let q = self.search.read().trim().to_lowercase();
+        let q = self.search.trim().to_lowercase();
         if q.is_empty() {
             return true;
         }
@@ -321,10 +323,21 @@ impl AppState {
                 .unwrap_or(false)
         })
     }
-}
 
-impl Default for AppState {
-    fn default() -> Self {
-        Self::new()
+    /// Visible group keys in display order (respecting filter), for navigation.
+    pub fn visible_keys(&mut self) -> Vec<String> {
+        let groups = self.snapshot.groups.clone();
+        let order = self.order_for(&groups);
+        let snap = self.snapshot.clone();
+        order
+            .into_iter()
+            .filter(|k| {
+                groups
+                    .iter()
+                    .find(|g| &g.key == k)
+                    .map(|g| self.passes_filter(g, &snap))
+                    .unwrap_or(false)
+            })
+            .collect()
     }
 }

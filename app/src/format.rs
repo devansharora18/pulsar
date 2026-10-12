@@ -46,6 +46,7 @@ pub fn pct(v: f64) -> String {
 }
 
 /// Frequency in MHz → "3.42 GHz" or "850 MHz".
+#[allow(dead_code)]
 pub fn human_freq_mhz(mhz: u64) -> String {
     if mhz >= 1000 {
         format!("{:.2} GHz", mhz as f64 / 1000.0)
@@ -74,6 +75,7 @@ pub fn human_duration(secs: f64) -> String {
 }
 
 /// A monogram (first letter, uppercase) for entries with no icon.
+#[allow(dead_code)]
 pub fn monogram(name: &str) -> String {
     name.chars()
         .find(|c| c.is_alphanumeric())

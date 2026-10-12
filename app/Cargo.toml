@@ -3,7 +3,7 @@ name = "pulsar"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Pulsar — a beautiful Linux system monitor built with Dioxus."
+description = "Pulsar — a fast TUI system monitor with honest memory and per-app power."
 default-run = "pulsar"
 
 [[bin]]
@@ -12,8 +12,10 @@ path = "src/main.rs"
 
 [dependencies]
 pulsar-core = { path = "../core" }
-dioxus = { version = "0.7", features = ["desktop"] }
+ratatui = "0.30"
 serde = { workspace = true }
 toml = { workspace = true }
 dirs = { workspace = true }
 tokio = { workspace = true }
+image = { version = "0.25", default-features = false, features = ["png"] }
+fontdue = "0.9"
