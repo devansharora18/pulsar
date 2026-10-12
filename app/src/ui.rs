@@ -984,6 +984,15 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
     let s = &state.snapshot;
     let power = s.power;
+    // The Power view reports a 30-second rolling average, not the instantaneous tick.
+    let n = avg_window_samples(state);
+    let avg_total = avg_last(&s.series.power, n);
+    let avg_pkg = avg_last(&s.series.pkg, n);
+    let avg_dynamic = avg_last(&s.series.cpu_dynamic, n);
+    let avg_gpu = avg_last(&s.series.gpu, n);
+    let avg_battery = avg_last(&s.series.battery, n);
+    let gpu_available = power.gpu_w.is_some() || avg_gpu > 0.0;
+    let battery_available = power.battery_w.is_some() || avg_battery > 0.0;
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -1007,17 +1016,15 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
         Line::from(vec![
             Span::styled(" total   ", Style::default().fg(p.dim)),
             Span::styled(
-                human_watts(power.total_w),
+                human_watts(avg_total),
                 Style::default().fg(p.green).add_modifier(Modifier::BOLD),
             ),
+            Span::styled("  (30s avg)", Style::default().fg(p.dim)),
             Span::styled(format!("   [{kind}]"), Style::default().fg(p.yellow)),
         ]),
         Line::from(vec![
             Span::styled(" package ", Style::default().fg(p.dim)),
-            Span::styled(
-                human_watts(power.pkg_w.unwrap_or(0.0)),
-                Style::default().fg(p.fg),
-            ),
+            Span::styled(human_watts(avg_pkg), Style::default().fg(p.fg)),
         ]),
     ]);
     let pblock = panel(state, "Power");
@@ -1025,31 +1032,29 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
     f.render_widget(pblock, chunks[0]);
     f.render_widget(src, pinner);
 
-    let gpu = power.gpu_w.unwrap_or(0.0);
-    let detail = Paragraph::new(vec![
+    let mut detail_lines = vec![
         Line::from(vec![
             Span::styled(" dynamic ", Style::default().fg(p.dim)),
-            Span::styled(
-                human_watts(power.cpu_dynamic_w),
-                Style::default().fg(p.orange),
-            ),
+            Span::styled(human_watts(avg_dynamic), Style::default().fg(p.orange)),
         ]),
         Line::from(vec![
             Span::styled(" baseline ", Style::default().fg(p.dim)),
             Span::styled(human_watts(power.baseline_w), Style::default().fg(p.fg)),
         ]),
-        Line::from(vec![
+    ];
+    if gpu_available {
+        detail_lines.push(Line::from(vec![
             Span::styled(" gpu     ", Style::default().fg(p.dim)),
-            Span::styled(human_watts(gpu), Style::default().fg(p.magenta)),
-        ]),
-        Line::from(vec![
+            Span::styled(human_watts(avg_gpu), Style::default().fg(p.magenta)),
+        ]));
+    }
+    if battery_available {
+        detail_lines.push(Line::from(vec![
             Span::styled(" battery ", Style::default().fg(p.dim)),
-            Span::styled(
-                human_watts(power.battery_w.unwrap_or(0.0)),
-                Style::default().fg(p.yellow),
-            ),
-        ]),
-    ]);
+            Span::styled(human_watts(avg_battery), Style::default().fg(p.yellow)),
+        ]));
+    }
+    let detail = Paragraph::new(detail_lines);
     let bblock = panel(state, "Breakdown");
     let binner = bblock.inner(cols[1]);
     f.render_widget(bblock, cols[1]);
@@ -1097,24 +1102,21 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
     f.render_widget(chart, inner);
 
     // Top consumers.
-    let block = panel(state, "Top power consumers");
+    let block = panel(state, "Top power consumers (30s avg)");
     let inner = block.inner(chunks[2]);
     f.render_widget(block, chunks[2]);
-    let mut groups: Vec<&Group> = state
+    let mut groups: Vec<(&Group, f64)> = state
         .snapshot
         .groups
         .iter()
-        .filter(|g| g.power_w > 0.0)
+        .map(|g| (g, avg_last(&g.spark, n)))
+        .filter(|(_, a)| *a > 0.0005)
         .collect();
-    groups.sort_by(|a, b| {
-        b.power_w
-            .partial_cmp(&a.power_w)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-    let maxp = groups.first().map(|g| g.power_w).unwrap_or(1.0).max(0.001);
+    groups.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    let maxp = groups.first().map(|(_, a)| *a).unwrap_or(1.0).max(0.001);
     let mut lines = Vec::new();
-    for g in groups.iter().take(inner.height as usize) {
-        let frac = g.power_w / maxp;
+    for (g, ap) in groups.iter().take(inner.height.saturating_sub(1) as usize) {
+        let frac = ap / maxp;
         let barw = 20usize;
         let filled = (frac * barw as f64).round() as usize;
         let bar = "█".repeat(filled) + &"░".repeat(barw - filled);
@@ -1125,7 +1127,7 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
             ),
             Span::styled(bar, Style::default().fg(p.orange)),
             Span::styled(
-                format!(" {:>8}", human_watts(g.power_w)),
+                format!(" {:>8}", human_watts(*ap)),
                 Style::default().fg(p.green),
             ),
             Span::styled("  est.", Style::default().fg(p.yellow)),
@@ -1151,6 +1153,21 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
 }
 
 // ── small helpers ────────────────────────────────────────────────────────────
+
+/// Number of samples in the 30-second averaging window at the current refresh rate.
+fn avg_window_samples(state: &AppState) -> usize {
+    let dt = (state.config.refresh_ms as f64 / 1000.0).max(0.05);
+    (30.0 / dt).round().max(1.0) as usize
+}
+
+/// Mean of the last `n` values (clamped to what is available).
+fn avg_last(v: &[f64], n: usize) -> f64 {
+    if v.is_empty() {
+        return 0.0;
+    }
+    let n = n.clamp(1, v.len());
+    v[v.len() - n..].iter().copied().sum::<f64>() / n as f64
+}
 
 fn num(s: String, color: Color) -> Cell<'static> {
     Cell::from(

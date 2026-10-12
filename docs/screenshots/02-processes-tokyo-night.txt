@@ -1,45 +1,45 @@
- PULSAR   13.3 GB used (43.3%)  ·  16.2 GB cache reclaimable  ·  17.4 GB available  ·  cpu 6.1%  ·  6.3 W model  ·  570 procs
+ PULSAR   13.2 GB used (42.9%)  ·  16.9 GB cache reclaimable  ·  17.5 GB available  ·  cpu 4.0%  ·  5.9 W model  ·  581 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Tokyo Night
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power
- view:group  sort:Memory ▼  groups:418
+ view:group  sort:Memory ▼  groups:426
 ╭ Processes ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │Name                                                                                                              N        CPU      Memory     Disk IO     Power   PID│
-│▍ Zen Browser                                                                                                      32     0.0%      3.6 GB      9.3 GB      0 mW 24720│
+│▍ Zen Browser                                                                                                      32     0.0%      3.7 GB     10.6 GB      0 mW 24720│
 │   ╰─ bwrap  [PSS]                                                                                                        0.0%     33.0 KB         0 B      0 mW 16247│
 │   ╰─ bwrap  [PSS]                                                                                                        0.0%     31.0 KB         0 B      0 mW 16247│
-│   ╰─ xdg-dbus-proxy  [PSS]                                                                                               0.0%      380 KB     88.0 KB      0 mW 16247│
+│   ╰─ xdg-dbus-proxy  [PSS]                                                                                               0.0%      384 KB     88.0 KB      0 mW 16247│
 │   ╰─ bwrap  [PSS]                                                                                                        0.0%     19.0 KB         0 B      0 mW 16247│
-│   ╰─ zen  [PSS]                                                                                                          0.0%      410 MB      7.8 GB      0 mW 16247│
-│   ╰─ forkserver  [PSS]                                                                                                   0.0%      733 KB     88.0 MB      0 mW 16248│
+│   ╰─ zen  [PSS]                                                                                                          0.0%      409 MB      9.2 GB      0 mW 16247│
+│   ╰─ forkserver  [PSS]                                                                                                   0.0%      735 KB     88.0 MB      0 mW 16248│
 │   ╰─ Socket Process  [PSS]                                                                                               0.0%      1.3 MB      108 KB      0 mW 16248│
-│   ╰─ Privileged Cont  [PSS]                                                                                              0.0%     21.7 MB     11.1 MB      0 mW 16248│
+│   ╰─ Privileged Cont  [PSS]                                                                                              0.0%     22.9 MB     11.2 MB      0 mW 16248│
 │   ╰─ RDD Process  [PSS]                                                                                                  0.0%     15.6 MB     45.9 MB      0 mW 16248│
-│   ╰─ Web Content  [PSS]                                                                                                  0.0%      5.3 MB      1.9 MB      0 mW 16249│
-│   ╰─ WebExtensions  [PSS]                                                                                                0.0%      173 MB     39.0 MB      0 mW 16250│
+│   ╰─ Web Content  [PSS]                                                                                                  0.0%      6.6 MB      2.8 MB      0 mW 16249│
+│   ╰─ WebExtensions  [PSS]                                                                                                0.0%      208 MB     39.6 MB      0 mW 16250│
 │   ╰─ Utility Process  [PSS]                                                                                              0.0%      8.1 MB     16.3 MB      0 mW 16250│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      103 MB     54.3 MB      0 mW 16252│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     11.9 MB      5.9 MB      0 mW 16252│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     43.6 MB      2.5 MB      0 mW 16254│
-│   ╰─ Isolated Servic  [PSS]                                                                                              0.0%     28.3 MB      7.4 MB      0 mW 16760│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      623 MB      450 MB      0 mW 16761│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      101 MB      141 MB      0 mW 16765│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      945 MB      409 MB      0 mW 16765│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      110 MB     55.6 MB      0 mW 16252│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     11.7 MB      6.1 MB      0 mW 16252│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     43.6 MB      2.6 MB      0 mW 16254│
+│   ╰─ Isolated Servic  [PSS]                                                                                              0.0%     39.6 MB      7.7 MB      0 mW 16760│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      671 MB      451 MB      0 mW 16761│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      107 MB      141 MB      0 mW 16765│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      907 MB      409 MB      0 mW 16765│
 │   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      136 MB      114 MB      0 mW 16829│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      104 MB     72.8 MB      0 mW 17748│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     55.2 MB      4.9 MB      0 mW 17751│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      105 MB     72.8 MB      0 mW 17748│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     55.3 MB      4.9 MB      0 mW 17751│
 │   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      187 MB      708 KB      0 mW 17753│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     50.8 MB         0 B      0 mW 18264│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      119 MB         0 B      0 mW 18354│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     16.3 MB         0 B      0 mW 18464│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     19.1 MB         0 B      0 mW 18464│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      408 MB      1.2 MB      0 mW 18472│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     36.8 MB         0 B      0 mW 18535│
-│   ╰─ Web Content  [PSS]                                                                                                  0.0%     11.0 MB         0 B      0 mW 18537│
-│   ╰─ Web Content  [PSS]                                                                                                  0.0%     10.9 MB         0 B      0 mW 18614│
-│   ╰─ Web Content  [PSS]                                                                                                  0.0%     10.9 MB         0 B      0 mW 18649│
-│▍ opencode                                                                                                          3    27.5%      911 MB     57.3 GB     29 mW 15790│
-│   ╰─ opencode  [PSS]                                                                                                     5.5%      544 MB     57.0 GB      6 mW 15790│
-│   ╰─ opencode  [PSS]                                                                                                    16.5%      182 MB      296 MB     18 mW 16740│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     51.8 MB         0 B      0 mW 18264│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      120 MB         0 B      0 mW 18354│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     16.4 MB         0 B      0 mW 18464│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     18.6 MB         0 B      0 mW 18464│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      460 MB      1.2 MB      0 mW 18472│
+│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     37.5 MB         0 B      0 mW 19146│
+│   ╰─ Web Content  [PSS]                                                                                                  0.0%     11.4 MB         0 B      0 mW 19428│
+│   ╰─ Web Content  [PSS]                                                                                                  0.0%     11.6 MB         0 B      0 mW 19571│
+│   ╰─ Web Content  [PSS]                                                                                                  0.0%     11.1 MB         0 B      0 mW 19624│
+│▍ opencode                                                                                                          3    11.7%      975 MB     59.2 GB      8 mW 15790│
+│   ╰─ opencode  [PSS]                                                                                                     0.0%      582 MB     58.9 GB      0 mW 15790│
+│   ╰─ opencode  [PSS]                                                                                                     0.0%      178 MB      297 MB      0 mW 16740│
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  select a group (j/k) for actions
 

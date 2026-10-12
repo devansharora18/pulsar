@@ -238,6 +238,10 @@ impl Sampler {
             .swap
             .push(mem.swap_used as f64 / 1024.0 / 1024.0);
         self.history.power.push(power.total_w);
+        self.history.pkg.push(power.pkg_w.unwrap_or(0.0));
+        self.history.cpu_dynamic.push(power.cpu_dynamic_w);
+        self.history.gpu.push(power.gpu_w.unwrap_or(0.0));
+        self.history.battery.push(power.battery_w.unwrap_or(0.0));
         self.history
             .cpu_temp
             .push(crate::hwmon::cpu_temp_c().unwrap_or(f64::NAN));
@@ -274,6 +278,10 @@ impl Sampler {
             mem_cache: self.history.mem_cache.iter().collect(),
             swap: self.history.swap.iter().collect(),
             power: self.history.power.iter().collect(),
+            pkg: self.history.pkg.iter().collect(),
+            cpu_dynamic: self.history.cpu_dynamic.iter().collect(),
+            gpu: self.history.gpu.iter().collect(),
+            battery: self.history.battery.iter().collect(),
             net_rx: self.history.net_rx.iter().collect(),
             net_tx: self.history.net_tx.iter().collect(),
             disk_read: self.history.disk_read.iter().collect(),
