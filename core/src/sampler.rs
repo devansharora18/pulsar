@@ -149,6 +149,7 @@ impl Sampler {
         let pids = read_pids();
 
         let mut processes: Vec<ProcSample> = Vec::with_capacity(pids.len());
+        let mut deltas: Vec<u64> = Vec::with_capacity(pids.len());
         let mut new_ticks: HashMap<i32, (u64, u64)> = HashMap::with_capacity(pids.len());
         let mut alive: HashSet<i32> = HashSet::with_capacity(pids.len());
 
@@ -171,7 +172,7 @@ impl Sampler {
             new_ticks.insert(pid, (stat.starttime, stat.total_ticks()));
 
             let cpu_pct = proc_delta as f64 / (dt * self.clock_ticks as f64) * 100.0;
-            let power_w = attribute_watts(power.cpu_dynamic_w, proc_delta, cpu.total_delta);
+            deltas.push(proc_delta);
 
             let rss_fallback = (stat.rss_pages.max(0) as u64) * self.page_size / 1024;
             let (last_rss, last_seq) = self.smaps_epoch.get(&pid).copied().unwrap_or((u64::MAX, 0));
@@ -211,8 +212,21 @@ impl Sampler {
                 mem: mem_pm,
                 io,
                 cpu_pct,
-                power_w,
+                power_w: 0.0,
             });
+        }
+
+        // Attribute the package's *dynamic* draw across processes by their share of the
+        // interval's CPU ticks. Using the sum of process deltas (not total system jiffies,
+        // which are mostly idle) means the per-app watts add up to the dynamic draw.
+        let sum_delta: u64 = deltas.iter().sum();
+        let denom = if sum_delta > 0 {
+            sum_delta
+        } else {
+            cpu.total_delta.max(1)
+        };
+        for (p, d) in processes.iter_mut().zip(deltas.iter()) {
+            p.power_w = attribute_watts(power.cpu_dynamic_w, *d, denom);
         }
 
         let assigned = assign_groups(&processes, &self.desktop);

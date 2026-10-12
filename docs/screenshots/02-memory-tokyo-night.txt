@@ -1,41 +1,41 @@
- PULSAR   13.2 GB used (42.9%)  ·  16.9 GB cache reclaimable  ·  17.5 GB available  ·  cpu 4.0%  ·  5.9 W model  ·  581 procs
+ PULSAR   13.5 GB used (44.0%)  ·  16.5 GB cache reclaimable  ·  17.1 GB available  ·  cpu 6.6%  ·  6.1 W model  ·  584 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Tokyo Night
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power
 ╭ Memory ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ used 40%                                                                cache 55%                                                                                    │
+│ used 41%                                                                  cache 54%                                                                             fre… │
 │                                                                                                                                                                      │
-│ 13.2 GB really used  ·  16.9 GB cache you can reclaim  ·  17.5 GB available  ·  kernel+unattributed 3.3 GB                                                           │
+│ 13.5 GB really used  ·  16.5 GB cache you can reclaim  ·  17.1 GB available  ·  kernel+unattributed 3.4 GB                                                           │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭ Really used ──────────────────────────────────────────╮╭ Reclaimable ─────────────────────────────────────────╮╭ Kernel + unattributed ──────────────────────────────╮
-│13.2 GB                                                ││16.9 GB                                               ││3.3 GB                                               │
-│42.9% of total · PSI 0.0                               ││page cache + buffers + slab · shared 652 MB           ││kernel 910 MB · unattributed 2.4 GB · Σ PSS 9.8 GB   │
+│13.5 GB                                                ││16.5 GB                                               ││3.4 GB                                               │
+│44.0% of total · PSI 0.0                               ││page cache + buffers + slab · shared 643 MB           ││kernel 918 MB · unattributed 2.5 GB · Σ PSS 10.1 GB  │
 │                                                       ││                                                      ││                                                     │
 ╰───────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
 ╭ Memory treemap by app (PSS) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ Zen Browser                                                                        jellyf… GitH…                                             Software                │
-│ 3.7 GB                                                                             494 MB  418 MB                                            194 MB                  │
+│ Zen Browser                                                                              jelly…  GitH…                                       Software                │
+│ 4.1 GB                                                                                   494 MB  418 MB                                      187 MB                  │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                 systemd-journal      │
-│                                                                                                                                                 111 MB               │
-│                                                                                                                                                  abrt-dump-journ     │
-│                                                                                                                                                  68.9 MB             │
-│                                                                                                                                                    localsearch-3     │
-│                                                                                                                                                     Terminal         │
-│                                                                                                                                                      gjs-console     │
+│                                                                                                                                                mpv Media Player      │
+│                                                                                                                                                120 MB                │
+│                                                                                                                                                  dnf5daemon-serv     │
+│                                                                                                                                                  74.7 MB             │
+│                                                                                                                                                   dockerd            │
+│                                                                                                                                                   6 systemd          │
+│                                                                                                                                                      tailscaled      │
 │                                                                                                                                                                      │
-│                                                                                                                                                       Extension Man… │
-│                                                                                                                                                        fwupd         │
+│                                                                                                                                                       gjs-console    │
+│                                                                                                                                                        Stremio Serv… │
 │                                                                                                                                                         rsyslogd     │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                             ibus-ex… │
-│                                                                                                                                                              wirepl… │
+│                                                                                                                                                                      │
 │                                                                                                                                                               speak… │
+│                                                                                                                                                                wifi… │
 │                                                                                                                                                                      │
 │ opencode                                                                                                                                                             │
-│ 975 MB                                                                                                                                                               │
+│ 1.1 GB                                                                                                                                                               │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │

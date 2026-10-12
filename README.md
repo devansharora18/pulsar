@@ -49,7 +49,9 @@ so Pulsar estimates and *says so*. CPU watts come from RAPL package energy where
 (`est.`) and from a utilisation × TDP model otherwise (`model`); GPU watts come from amdgpu
 `power1_average` / NVML / `nvidia-smi`; battery from `power_now` (or
 `current_now × voltage_now`). CPU watts are attributed by each process's share of CPU
-ticks of the package's *dynamic* (non-idle) draw.
+ticks of the package's *dynamic* (non-idle) draw, so the per-app CPU watts sum to the
+package's dynamic draw. GPU watts are measured at system level and shown separately (they
+are not split across processes); the Power view reconciles the two explicitly.
 
 ## Views
 

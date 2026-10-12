@@ -997,7 +997,7 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(4), // sources
+            Constraint::Length(6), // sources + breakdown
             Constraint::Length(8), // system watts graph
             Constraint::Min(5),    // top consumers
         ])
@@ -1139,6 +1139,21 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
             Style::default().fg(p.dim),
         )));
     }
+    // Reconcile: apps sum to the CPU dynamic draw; the GPU is measured at system level and
+    // is not split across processes, so it is shown separately.
+    let sum_attr: f64 = state.snapshot.processes.iter().map(|pr| pr.power_w).sum();
+    lines.push(Line::from(Span::styled(
+        format!(
+            " Σ apps {}{}",
+            human_watts(sum_attr),
+            if gpu_available {
+                format!("   ·   gpu (system-only) {}", human_watts(avg_gpu))
+            } else {
+                String::new()
+            }
+        ),
+        Style::default().fg(p.dim),
+    )));
     let wh: f64 = s
         .series
         .power
