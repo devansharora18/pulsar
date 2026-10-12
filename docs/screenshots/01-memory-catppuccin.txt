@@ -1,0 +1,46 @@
+ PULSAR   13.3 GB used (43.3%)  ·  16.2 GB cache reclaimable  ·  17.4 GB available  ·  cpu 6.1%  ·  6.3 W model  ·  570 procs
+ AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Catppuccin Mocha
+  1 Overview  │  2 Processes  │  3 Memory  │  4 Power
+╭ Memory ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ used 40%                                                                 cache 53%                                                                           free 5% │
+│                                                                                                                                                                      │
+│ 13.3 GB really used  ·  16.2 GB cache you can reclaim  ·  17.4 GB available  ·  kernel+unattributed 3.8 GB                                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭ Really used ──────────────────────────────────────────╮╭ Reclaimable ─────────────────────────────────────────╮╭ Kernel + unattributed ──────────────────────────────╮
+│13.3 GB                                                ││16.2 GB                                               ││3.8 GB                                               │
+│43.3% of total · PSI 0.0                               ││page cache + buffers + slab · shared 839 MB           ││kernel 904 MB · unattributed 3.0 GB · Σ PSS 9.4 GB   │
+│                                                       ││                                                      ││                                                     │
+╰───────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
+╭ Memory treemap by app (PSS) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Zen Browser                                                       opencode         jellyfin Files    GitH… goog…                           python3.12                │
+│ 3.6 GB                                                            911 MB           525 MB   465 MB   368 M 362 MB                          150 MB                    │
+│                                                                                                                                                                      │
+│                                                                                                                                               pipewire               │
+│                                                                                                                                               116 MB                 │
+│                                                                                                                                                 abrt-dump-journ      │
+│                                                                                                                                                 80.6 MB              │
+│                                                                                                                                                  dockerd             │
+│                                                                                                                                                  68.0 MB             │
+│                                                                                                                                                    systemd           │
+│                                                                                                                                                     tailscaled       │
+│                                                                                                                                                      Terminal        │
+│                                                                                                                                                       fwupd          │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                           xdg-deskt… │
+│                                                                                                                                                            ollama    │
+│                                                                                                                                                             sssd_kcm │
+│                                                                                                                                                              wirepl… │
+│                                                                                                                                                                wifi… │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ reclaim: c drop caches  C drop all  m compact  w flush swap  p enable power metrics (pkexec)
+
+ 1-4 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit

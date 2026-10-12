@@ -79,6 +79,8 @@ pub struct Sampler {
     /// Cached per-pid memory/io, refreshed on a rotating schedule.
     mem_cache: HashMap<i32, crate::pss::ProcMemory>,
     io_cache: HashMap<i32, IoCounters>,
+    /// pid → (RSS kB, seq) at the last `smaps_rollup` read.
+    smaps_epoch: HashMap<i32, (u64, u64)>,
     seq: u64,
     clock_ticks: u64,
     page_size: u64,
@@ -105,6 +107,7 @@ impl Sampler {
             prev_ticks: HashMap::new(),
             mem_cache: HashMap::new(),
             io_cache: HashMap::new(),
+            smaps_epoch: HashMap::new(),
             seq: 0,
             clock_ticks,
             page_size,
@@ -138,19 +141,18 @@ impl Sampler {
         let net = self.net.sample(dt);
         let disks = self.disk.sample(dt);
 
-        // `smaps_rollup` and `/proc/<pid>/io` are relatively expensive; reading them for
-        // every process every tick dominated the sampler's cost on large process counts.
-        // Refresh them for a rotating slice each tick (each process every `detail_every`
-        // ticks), while the cheap `/proc/<pid>/stat` keeps row CPU and RSS live.
+        // `smaps_rollup` scales with the number of VMAs and is the sampler's hot spot.
+        // Only re-read it when a process's RSS actually moved (or every `MAX_PSS_AGE`
+        // ticks as a floor), so stable processes cost nothing while active ones stay live.
+        const RSS_THRESHOLD_KB: u64 = 512;
+        const MAX_PSS_AGE: u64 = 40;
         let pids = read_pids();
-        let detail_every = (pids.len() / 40).clamp(1, 24);
-        let rotation = (self.seq as usize) % detail_every;
 
         let mut processes: Vec<ProcSample> = Vec::with_capacity(pids.len());
         let mut new_ticks: HashMap<i32, (u64, u64)> = HashMap::with_capacity(pids.len());
         let mut alive: HashSet<i32> = HashSet::with_capacity(pids.len());
 
-        for (idx, pid) in pids.into_iter().enumerate() {
+        for pid in pids {
             let Ok(stat) = Stat::parse(&read_file(format!("/proc/{pid}/stat"))) else {
                 continue;
             };
@@ -172,11 +174,15 @@ impl Sampler {
             let power_w = attribute_watts(power.cpu_dynamic_w, proc_delta, cpu.total_delta);
 
             let rss_fallback = (stat.rss_pages.max(0) as u64) * self.page_size / 1024;
-            let detailed = !kernel_thread
-                && (idx % detail_every == rotation || !self.mem_cache.contains_key(&pid));
+            let (last_rss, last_seq) = self.smaps_epoch.get(&pid).copied().unwrap_or((u64::MAX, 0));
+            let changed = rss_fallback.abs_diff(last_rss) > RSS_THRESHOLD_KB;
+            let stale = self.seq.saturating_sub(last_seq) >= MAX_PSS_AGE;
+            let detailed =
+                !kernel_thread && (changed || stale || !self.mem_cache.contains_key(&pid));
             let mem_pm = if detailed {
                 let pm = ProcMemory::read(pid, rss_fallback, 0);
                 self.mem_cache.insert(pid, pm);
+                self.smaps_epoch.insert(pid, (rss_fallback, self.seq));
                 self.io_cache
                     .insert(pid, IoCounters::read(pid).unwrap_or_default());
                 pm
@@ -217,6 +223,7 @@ impl Sampler {
         self.cache.retain(&alive);
         self.mem_cache.retain(|pid, _| alive.contains(pid));
         self.io_cache.retain(|pid, _| alive.contains(pid));
+        self.smaps_epoch.retain(|pid, _| alive.contains(pid));
         self.prev_ticks = new_ticks;
 
         // History.

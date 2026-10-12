@@ -2,11 +2,10 @@
 Type=Application
 Name=Pulsar
 GenericName=System Monitor
-Comment=Fast, grouped system monitor with honest memory and per-app power
+Comment=Fast, grouped terminal system monitor with honest memory and per-app power
 Exec=pulsar
 Icon=pulsar
-Terminal=false
-Categories=System;Monitor;GTK;
-Keywords=system;monitor;process;memory;power;cpu;
+Terminal=true
+Categories=System;Monitor;
+Keywords=system;monitor;process;memory;power;cpu;tui;
 StartupNotify=true
-StartupWMClass=pulsar
