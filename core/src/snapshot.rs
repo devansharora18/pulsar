@@ -11,6 +11,7 @@ use crate::meminfo::MemoryBreakdown;
 use crate::net::NetInterface;
 use crate::power::SystemPower;
 use crate::pressure::Pressure;
+use crate::sockets::ListeningSocket;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemSnapshot {
@@ -30,6 +31,8 @@ pub struct SystemSnapshot {
     /// Sum of PSS over all processes — should approach `mem.used_by_apps()`.
     pub sum_pss: u64,
     pub proc_count: usize,
+    /// Listening TCP / bound UDP sockets mapped to owning processes.
+    pub sockets: Vec<ListeningSocket>,
     /// The RAPL capability probe result (for the "Enable power metrics" affordance).
     pub rapl_readable: bool,
     /// Rolling system-level series for the overview sparklines.
@@ -53,6 +56,7 @@ impl Default for SystemSnapshot {
             groups: Vec::new(),
             sum_pss: 0,
             proc_count: 0,
+            sockets: Vec::new(),
             rapl_readable: false,
             series: SeriesView::default(),
         }

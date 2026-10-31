@@ -20,6 +20,7 @@ pub mod pss;
 pub mod rapl;
 pub mod sampler;
 pub mod snapshot;
+pub mod sockets;
 pub mod theme;
 
 pub use error::{Error, Result};

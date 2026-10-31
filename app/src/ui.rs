@@ -36,6 +36,7 @@ pub fn draw(f: &mut Frame, state: &mut AppState) {
         View::Processes => draw_processes(f, state, chunks[2]),
         View::Memory => draw_memory(f, state, chunks[2]),
         View::Power => draw_power(f, state, chunks[2]),
+        View::Ports => draw_ports(f, state, chunks[2]),
     }
     draw_footer(f, state, chunks[3]);
 
@@ -146,7 +147,7 @@ fn draw_footer(f: &mut Frame, state: &AppState, area: Rect) {
         ))
     } else {
         Line::from(vec![
-            Span::styled(" 1-4", Style::default().fg(p.accent)),
+            Span::styled(" 1-5", Style::default().fg(p.accent)),
             Span::styled(" view  ", Style::default().fg(p.dim)),
             Span::styled("/", Style::default().fg(p.accent)),
             Span::styled(" search  ", Style::default().fg(p.dim)),
@@ -976,6 +977,134 @@ fn draw_treemap(f: &mut Frame, state: &AppState, area: Rect) {
             }
         }
     }
+}
+
+// ── ports ────────────────────────────────────────────────────────────────────
+
+fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
+    let p = state.palette;
+    let q = state.search.trim().to_lowercase();
+
+    let mut rows_data: Vec<&pulsar_core::sockets::ListeningSocket> = state
+        .snapshot
+        .sockets
+        .iter()
+        .filter(|s| {
+            if q.is_empty() {
+                return true;
+            }
+            s.proto.to_lowercase().contains(&q)
+                || s.addr.to_lowercase().contains(&q)
+                || s.port.to_string().contains(&q)
+                || s.comm
+                    .as_deref()
+                    .map(|c| c.to_lowercase().contains(&q))
+                    .unwrap_or(false)
+        })
+        .collect();
+    rows_data.sort_by_key(|s| s.port);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(1), Constraint::Min(4)])
+        .split(area);
+
+    let wildcard = rows_data.iter().filter(|s| s.is_wildcard()).count();
+    let unowned = rows_data.iter().filter(|s| s.pid.is_none()).count();
+    let mut tool = vec![
+        Span::styled(" listening:", Style::default().fg(p.dim)),
+        Span::styled(format!("{}", rows_data.len()), Style::default().fg(p.fg)),
+        Span::styled("  exposed:", Style::default().fg(p.dim)),
+        Span::styled(
+            format!("{wildcard}"),
+            Style::default().fg(if wildcard > 0 { p.orange } else { p.fg }),
+        ),
+        Span::styled("  unowned:", Style::default().fg(p.dim)),
+        Span::styled(format!("{unowned}"), Style::default().fg(p.dim)),
+    ];
+    if !state.search.is_empty() {
+        tool.push(Span::styled("  /", Style::default().fg(p.accent)));
+        tool.push(Span::styled(
+            state.search.clone(),
+            Style::default().fg(p.fg).add_modifier(Modifier::BOLD),
+        ));
+    }
+    f.render_widget(Paragraph::new(Line::from(tool)), chunks[0]);
+
+    let header = Row::new(vec![
+        Cell::from(Span::styled("Proto", Style::default().fg(p.accent))),
+        Cell::from(Span::styled("Local address", Style::default().fg(p.accent))),
+        Cell::from(Span::styled("State", Style::default().fg(p.accent))),
+        Cell::from(Span::styled("Process", Style::default().fg(p.accent))),
+        Cell::from(
+            Line::from(Span::styled("PID", Style::default().fg(p.accent)))
+                .alignment(Alignment::Right),
+        ),
+        Cell::from(Span::styled("Scope", Style::default().fg(p.accent))),
+        Cell::from(""),
+    ])
+    .style(Style::default().bg(p.bg));
+
+    let rows: Vec<Row> = rows_data
+        .iter()
+        .map(|s| {
+            let scope = if s.is_wildcard() {
+                ("all ifaces", p.orange)
+            } else if s.addr == "127.0.0.1" || s.addr == "::1" {
+                ("localhost", p.green)
+            } else {
+                ("interface", p.dim)
+            };
+            Row::new(vec![
+                Cell::from(Line::from(s.proto.clone()).style(Style::default().fg(p.cyan))),
+                Cell::from(Line::from(s.endpoint()).style(Style::default().fg(p.fg))),
+                Cell::from(Line::from(s.state.clone()).style(Style::default().fg(p.dim))),
+                Cell::from(
+                    Line::from(s.comm.clone().unwrap_or_else(|| "—".to_string()))
+                        .style(Style::default().fg(if s.comm.is_some() { p.fg } else { p.dim })),
+                ),
+                Cell::from(
+                    Line::from(
+                        s.pid
+                            .map(|v| v.to_string())
+                            .unwrap_or_else(|| "—".to_string()),
+                    )
+                    .alignment(Alignment::Right)
+                    .style(Style::default().fg(p.dim)),
+                ),
+                Cell::from(Line::from(scope.0).style(Style::default().fg(scope.1))),
+                Cell::from(""),
+            ])
+        })
+        .collect();
+
+    if rows.is_empty() {
+        f.render_widget(
+            Paragraph::new(Line::from(Span::styled(
+                " no matching open ports",
+                Style::default().fg(p.dim),
+            )))
+            .block(panel(state, "Open ports")),
+            chunks[1],
+        );
+        return;
+    }
+
+    let table = Table::new(
+        rows,
+        [
+            Constraint::Length(6),
+            Constraint::Length(28),
+            Constraint::Length(8),
+            Constraint::Length(32),
+            Constraint::Length(7),
+            Constraint::Length(12),
+            Constraint::Min(0),
+        ],
+    )
+    .header(header)
+    .block(panel(state, "Open ports (TCP listen / UDP bound)"));
+    f.render_widget(table, chunks[1]);
 }
 
 // ── power ────────────────────────────────────────────────────────────────────

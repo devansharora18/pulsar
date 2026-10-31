@@ -65,12 +65,15 @@ are not split across processes); the Power view reconciles the two explicitly.
   panels, an interactive **treemap by app**, and the Reclaim panel.
 - **Power** (`4`): system watts over time, per-source breakdown (package / dynamic /
   baseline / GPU / battery), top consumers, cumulative Wh.
+- **Ports** (`5`): listening TCP and bound UDP sockets, with protocol, local address, state,
+  owning process and PID, and whether the bind is exposed on all interfaces or localhost.
+  Sockets with no owning process are shown as `—` rather than guessed.
 
 ## Controls
 
 | Key | Action |
 |---|---|
-| `1` `2` `3` `4` / `Tab` | Overview / Processes / Memory / Power |
+| `1` `2` `3` `4` `5` / `Tab` | Overview / Processes / Memory / Power / Ports |
 | `/` | search |
 | `j` `k` / arrows | move selection |
 | `Enter` | expand / collapse group |

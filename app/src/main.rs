@@ -93,6 +93,7 @@ fn parse_cli(args: impl Iterator<Item = String>) -> Cli {
                     "processes" => Some(View::Processes),
                     "memory" => Some(View::Memory),
                     "power" => Some(View::Power),
+                    "ports" => Some(View::Ports),
                     _ => None,
                 })
             }
@@ -168,6 +169,7 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
         KeyCode::Char('2') => state.view = View::Processes,
         KeyCode::Char('3') => state.view = View::Memory,
         KeyCode::Char('4') => state.view = View::Power,
+        KeyCode::Char('5') => state.view = View::Ports,
         KeyCode::Char('/') => {
             state.search_active = true;
             state.view = View::Processes;

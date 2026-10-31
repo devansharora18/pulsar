@@ -22,6 +22,7 @@ use crate::pressure::Pressure;
 use crate::process::{self, IoCounters, Stat, Status};
 use crate::pss::ProcMemory;
 use crate::snapshot::{SeriesView, SystemSnapshot};
+use crate::sockets::SocketCollector;
 
 #[derive(Debug, Clone, Default)]
 struct CachedProc {
@@ -71,6 +72,7 @@ pub struct Sampler {
     cpu: CpuCollector,
     net: NetCollector,
     disk: DiskCollector,
+    sockets: SocketCollector,
     power: PowerSampler,
     cache: PidCache,
     history: History,
@@ -101,6 +103,7 @@ impl Sampler {
             cpu: CpuCollector::new(),
             net: NetCollector::default(),
             disk: DiskCollector::default(),
+            sockets: SocketCollector::default(),
             power: PowerSampler::new(config.tdp_w),
             cache: PidCache::default(),
             history,
@@ -140,6 +143,7 @@ impl Sampler {
         let filesystems: Vec<Filesystem> = crate::filesystem::read_filesystems();
         let net = self.net.sample(dt);
         let disks = self.disk.sample(dt);
+        let sockets = self.sockets.sample();
 
         // `smaps_rollup` scales with the number of VMAs and is the sampler's hot spot.
         // Only re-read it when a process's RSS actually moved (or every `MAX_PSS_AGE`
@@ -318,6 +322,7 @@ impl Sampler {
             proc_count: processes.len(),
             processes,
             groups,
+            sockets,
             sum_pss,
             rapl_readable: self.rapl_readable,
             series,

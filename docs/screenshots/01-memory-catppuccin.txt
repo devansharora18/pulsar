@@ -1,41 +1,41 @@
- PULSAR   13.5 GB used (44.0%)  ·  16.5 GB cache reclaimable  ·  17.1 GB available  ·  cpu 6.6%  ·  6.1 W model  ·  584 procs
+ PULSAR   15.9 GB used (51.8%)  ·  14.6 GB cache reclaimable  ·  14.8 GB available  ·  cpu 11.8%  ·  7.6 W model  ·  558 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Catppuccin Mocha
-  1 Overview  │  2 Processes  │  3 Memory  │  4 Power
+  1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
 ╭ Memory ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ used 41%                                                                  cache 54%                                                                             fre… │
+│ used 49%                                                                             cache 48%                                                                       │
 │                                                                                                                                                                      │
-│ 13.5 GB really used  ·  16.5 GB cache you can reclaim  ·  17.1 GB available  ·  kernel+unattributed 3.4 GB                                                           │
+│ 15.9 GB really used  ·  14.6 GB cache you can reclaim  ·  14.8 GB available  ·  kernel+unattributed 1.6 GB                                                           │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭ Really used ──────────────────────────────────────────╮╭ Reclaimable ─────────────────────────────────────────╮╭ Kernel + unattributed ──────────────────────────────╮
-│13.5 GB                                                ││16.5 GB                                               ││3.4 GB                                               │
-│44.0% of total · PSI 0.0                               ││page cache + buffers + slab · shared 643 MB           ││kernel 918 MB · unattributed 2.5 GB · Σ PSS 10.1 GB  │
+│15.9 GB                                                ││14.6 GB                                               ││1.6 GB                                               │
+│51.8% of total · PSI 0.0                               ││page cache + buffers + slab · shared 363 MB           ││kernel 966 MB · unattributed 647 MB · Σ PSS 14.3 GB  │
 │                                                       ││                                                      ││                                                     │
 ╰───────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
 ╭ Memory treemap by app (PSS) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ Zen Browser                                                                              jelly…  GitH…                                       Software                │
-│ 4.1 GB                                                                                   494 MB  418 MB                                      187 MB                  │
+│ Zen Browser                                                                 opencode        google\x…  ardui…                               Software                 │
+│ 6.3 GB                                                                      1.4 GB          900 MB     660 MB                               211 MB                   │
+│                                                                                                                                                                      │
+│                                                                                                                                                abrt-dump-journ       │
+│                                                                                                                                                167 MB                │
+│                                                                                                                                                  python3.12          │
+│                                                                                                                                                  105 MB              │
+│                                                                                                                                                   Files              │
+│                                                                                                                                                     localsearch-3    │
+│                                                                                                                                                                      │
+│                                                                                                                                                     Terminal         │
+│                                                                                                                                                       Xwayland       │
+│                                                                                                                                                        mutter-x11-f… │
+│                                                                                                                                                         gnome\x2dwi… │
+│                                                                                                                                                                      │
+│                                                                                                                                                          containerd  │
+│                                                                                                                                                            cloudfla… │
+│                                                                                                                                                             systemd  │
+│                                                                                                                                                              tuned-… │
+│                                                                                                                                                               Calen… │
+│                                                                                                                                                                Netw… │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                mpv Media Player      │
-│                                                                                                                                                120 MB                │
-│                                                                                                                                                  dnf5daemon-serv     │
-│                                                                                                                                                  74.7 MB             │
-│                                                                                                                                                   dockerd            │
-│                                                                                                                                                   6 systemd          │
-│                                                                                                                                                      tailscaled      │
 │                                                                                                                                                                      │
-│                                                                                                                                                       gjs-console    │
-│                                                                                                                                                        Stremio Serv… │
-│                                                                                                                                                         rsyslogd     │
-│                                                                                                                                                                      │
-│                                                                                                                                                                      │
-│                                                                                                                                                                      │
-│                                                                                                                                                                      │
-│                                                                                                                                                               speak… │
-│                                                                                                                                                                wifi… │
-│                                                                                                                                                                      │
-│ opencode                                                                                                                                                             │
-│ 1.1 GB                                                                                                                                                               │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
@@ -43,4 +43,4 @@
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  reclaim: c drop caches  C drop all  m compact  w flush swap  p enable power metrics (pkexec)
 
- 1-4 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit
+ 1-5 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit

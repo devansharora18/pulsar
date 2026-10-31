@@ -1,46 +1,46 @@
- PULSAR   13.5 GB used (44.0%)  ·  16.5 GB cache reclaimable  ·  17.1 GB available  ·  cpu 6.6%  ·  6.1 W model  ·  584 procs
+ PULSAR   15.9 GB used (51.8%)  ·  14.6 GB cache reclaimable  ·  14.8 GB available  ·  cpu 11.8%  ·  7.6 W model  ·  558 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Catppuccin Mocha
-  1 Overview  │  2 Processes  │  3 Memory  │  4 Power
+  1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
 ╭ Power ────────────────────────────────────────────────────────────────────────────╭ Breakdown ───────────────────────────────────────────────────────────────────────╮
-│ total   5.9 W  (30s avg)   [model (util × TDP)]                                   │ dynamic 1.6 W                                                                    │
-│ package 1.6 W                                                                     │ baseline 310 mW                                                                  │
-│                                                                                   │ gpu     3.8 W                                                                    │
-│                                                                                   │ battery 5.9 W                                                                    │
+│ total   7.6 W  (30s avg)   [model (util × TDP)]                                   │ dynamic 2.1 W                                                                    │
+│ package 2.1 W                                                                     │ baseline 413 mW                                                                  │
+│                                                                                   │ gpu     4.1 W                                                                    │
+│                                                                                   │ battery 7.6 W                                                                    │
 ╰───────────────────────────────────────────────────────────────────────────────────╰──────────────────────────────────────────────────────────────────────────────────╯
 ╭ System watts over time ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │12W│                                                                                                                                                                  │
 │   │                                                                                                                                                                  │
-│   │                 ⢀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀│
-│6W │⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁                                                                                                                                                │
+│   │⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉│
+│6W │                                                                                                                                                                  │
 │   │                                                                                                                                                                  │
 │0  │                                                                                                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭ Top power consumers (30s avg) ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ pulsar                      ████████████████████   592 mW  est.                                                                                                      │
-│ opencode                    █████████████░░░░░░░   379 mW  est.                                                                                                      │
-│ kworker/u64:16-events_unbou…███░░░░░░░░░░░░░░░░░    99 mW  est.                                                                                                      │
-│ Zen Browser                 ███░░░░░░░░░░░░░░░░░    97 mW  est.                                                                                                      │
-│ avahi-daemon                ██░░░░░░░░░░░░░░░░░░    68 mW  est.                                                                                                      │
-│ Terminal                    ██░░░░░░░░░░░░░░░░░░    60 mW  est.                                                                                                      │
-│ kworker/u64:8-dm_vblank_con…██░░░░░░░░░░░░░░░░░░    49 mW  est.                                                                                                      │
-│ gnome-shell                 █░░░░░░░░░░░░░░░░░░░    44 mW  est.                                                                                                      │
-│ google\x2dchrome            █░░░░░░░░░░░░░░░░░░░    41 mW  est.                                                                                                      │
-│ localsearch-3               █░░░░░░░░░░░░░░░░░░░    37 mW  est.                                                                                                      │
-│ python3.14                  █░░░░░░░░░░░░░░░░░░░    29 mW  est.                                                                                                      │
-│ napi/phy0-0                 █░░░░░░░░░░░░░░░░░░░    19 mW  est.                                                                                                      │
-│ Chrome                      ░░░░░░░░░░░░░░░░░░░░    14 mW  est.                                                                                                      │
-│ adb                         ░░░░░░░░░░░░░░░░░░░░    11 mW  est.                                                                                                      │
-│ Stremio Service             ░░░░░░░░░░░░░░░░░░░░    10 mW  est.                                                                                                      │
-│ pipewire                    ░░░░░░░░░░░░░░░░░░░░    10 mW  est.                                                                                                      │
-│ wireplumber                 ░░░░░░░░░░░░░░░░░░░░     9 mW  est.                                                                                                      │
+│ pulsar                      ████████████████████   482 mW  est.                                                                                                      │
+│ Terminal                    ███████████████░░░░░   354 mW  est.                                                                                                      │
+│ Zen Browser                 ██████████████░░░░░░   338 mW  est.                                                                                                      │
+│ opencode                    █████████████░░░░░░░   314 mW  est.                                                                                                      │
+│ gnome-shell                 ████████░░░░░░░░░░░░   194 mW  est.                                                                                                      │
+│ google\x2dchrome            ██████░░░░░░░░░░░░░░   137 mW  est.                                                                                                      │
+│ arduino\x2dide              █░░░░░░░░░░░░░░░░░░░    35 mW  est.                                                                                                      │
+│ python3.14                  █░░░░░░░░░░░░░░░░░░░    34 mW  est.                                                                                                      │
+│ wireplumber                 █░░░░░░░░░░░░░░░░░░░    18 mW  est.                                                                                                      │
+│ btrfs-transaction           █░░░░░░░░░░░░░░░░░░░    14 mW  est.                                                                                                      │
+│ pipewire                    █░░░░░░░░░░░░░░░░░░░    13 mW  est.                                                                                                      │
+│ napi/phy0-0                 ░░░░░░░░░░░░░░░░░░░░    10 mW  est.                                                                                                      │
+│ kworker/u64:0-btrfs-endio   ░░░░░░░░░░░░░░░░░░░░     8 mW  est.                                                                                                      │
 │ systemd                     ░░░░░░░░░░░░░░░░░░░░     8 mW  est.                                                                                                      │
-│ irq/51-SYNA2BA6:00          ░░░░░░░░░░░░░░░░░░░░     6 mW  est.                                                                                                      │
-│ btrfs-transaction           ░░░░░░░░░░░░░░░░░░░░     5 mW  est.                                                                                                      │
-│ ptyxis-agent                ░░░░░░░░░░░░░░░░░░░░     5 mW  est.                                                                                                      │
-│ systemd-userwor             ░░░░░░░░░░░░░░░░░░░░     4 mW  est.                                                                                                      │
-│ containerd                  ░░░░░░░░░░░░░░░░░░░░     4 mW  est.                                                                                                      │
-│ rsyslogd                    ░░░░░░░░░░░░░░░░░░░░     4 mW  est.                                                                                                      │
-│ systemd-oomd                ░░░░░░░░░░░░░░░░░░░░     3 mW  est.                                                                                                      │
-│ Σ apps 1.8 W   ·   gpu (system-only) 3.8 W                                                                                                                           │
+│ Chrome                      ░░░░░░░░░░░░░░░░░░░░     6 mW  est.                                                                                                      │
+│ kworker/u64:8-btrfs-endio-w…░░░░░░░░░░░░░░░░░░░░     6 mW  est.                                                                                                      │
+│ rsyslogd                    ░░░░░░░░░░░░░░░░░░░░     5 mW  est.                                                                                                      │
+│ cloudflared                 ░░░░░░░░░░░░░░░░░░░░     5 mW  est.                                                                                                      │
+│ avahi-daemon                ░░░░░░░░░░░░░░░░░░░░     4 mW  est.                                                                                                      │
+│ polkitd                     ░░░░░░░░░░░░░░░░░░░░     3 mW  est.                                                                                                      │
+│ systemd-journal             ░░░░░░░░░░░░░░░░░░░░     3 mW  est.                                                                                                      │
+│ rcu_preempt                 ░░░░░░░░░░░░░░░░░░░░     3 mW  est.                                                                                                      │
+│ tailscaled                  ░░░░░░░░░░░░░░░░░░░░     3 mW  est.                                                                                                      │
+│ systemd-userwor             ░░░░░░░░░░░░░░░░░░░░     3 mW  est.                                                                                                      │
+│ systemd-logind              ░░░░░░░░░░░░░░░░░░░░     3 mW  est.                                                                                                      │
+│ Σ apps 3.3 W   ·   gpu (system-only) 4.1 W                                                                                                                           │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- 1-4 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit
+ 1-5 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit

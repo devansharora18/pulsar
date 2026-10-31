@@ -77,6 +77,7 @@ fn view_name(v: View) -> &'static str {
         View::Processes => "processes",
         View::Memory => "memory",
         View::Power => "power",
+        View::Ports => "ports",
     }
 }
 

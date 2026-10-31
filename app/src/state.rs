@@ -19,11 +19,18 @@ pub enum View {
     Processes,
     Memory,
     Power,
+    Ports,
 }
 
 impl View {
-    pub fn all() -> [View; 4] {
-        [View::Overview, View::Processes, View::Memory, View::Power]
+    pub fn all() -> [View; 5] {
+        [
+            View::Overview,
+            View::Processes,
+            View::Memory,
+            View::Power,
+            View::Ports,
+        ]
     }
     pub fn label(self) -> &'static str {
         match self {
@@ -31,6 +38,7 @@ impl View {
             View::Processes => "Processes",
             View::Memory => "Memory",
             View::Power => "Power",
+            View::Ports => "Ports",
         }
     }
 }
