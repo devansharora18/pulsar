@@ -98,7 +98,10 @@ fn parse_cli(args: impl Iterator<Item = String>) -> Cli {
                 })
             }
             "--help" | "-h" => {
-                println!("pulsar [--theme NAME] [--view overview|processes|memory|power] [--dump DIR] [--png]");
+                println!(
+                    "pulsar [--theme NAME] [--view overview|processes|memory|power|ports] \
+                     [--dump DIR] [--png] [--once]"
+                );
                 std::process::exit(0);
             }
             _ => {}
