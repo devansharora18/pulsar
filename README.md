@@ -66,8 +66,9 @@ are not split across processes); the Power view reconciles the two explicitly.
 - **Power** (`4`): system watts over time, per-source breakdown (package / dynamic /
   baseline / GPU / battery), top consumers, cumulative Wh.
 - **Ports** (`5`): listening TCP and bound UDP sockets, with protocol, local address, state,
-  owning process and PID, and whether the bind is exposed on all interfaces or localhost.
-  Sockets with no owning process are shown as `—` rather than guessed.
+  owning process and PID, working directory, and whether the bind is exposed on all
+  interfaces or localhost. Sockets with no owning process are shown as `—` rather than
+  guessed.
 
 ## Controls
 

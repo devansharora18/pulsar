@@ -1,46 +1,46 @@
- PULSAR   15.9 GB used (51.8%)  ·  14.6 GB cache reclaimable  ·  14.8 GB available  ·  cpu 11.8%  ·  7.6 W model  ·  558 procs
+ PULSAR   15.7 GB used (51.1%)  ·  14.3 GB cache reclaimable  ·  15.0 GB available  ·  cpu 6.1%  ·  7.3 W model  ·  559 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Catppuccin Mocha
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
- listening:84  exposed:38  unowned:26
+ listening:82  exposed:36  unowned:26
 ╭ Open ports (TCP listen / UDP bound) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│Proto  Local address                State    Process                              PID Scope                                                                           │
-│tcp    0.0.0.0:22                   LISTEN   —                                      — all ifaces                                                                      │
-│tcp6   [::]:22                      LISTEN   —                                      — all ifaces                                                                      │
-│tcp    127.0.0.53:53                LISTEN   —                                      — interface                                                                       │
-│tcp    127.0.0.54:53                LISTEN   —                                      — interface                                                                       │
-│udp    127.0.0.53:53                UNCONN   —                                      — interface                                                                       │
-│udp    127.0.0.54:53                UNCONN   —                                      — interface                                                                       │
-│udp    127.0.0.1:323                UNCONN   —                                      — localhost                                                                       │
-│udp6   [::1]:323                    UNCONN   —                                      — localhost                                                                       │
-│tcp    100.66.79.100:443            LISTEN   —                                      — interface                                                                       │
-│tcp6   [fd7a:115c:a1e0::d401:4fc4]: LISTEN   —                                      — interface                                                                       │
-│tcp    127.0.0.1:631                LISTEN   —                                      — localhost                                                                       │
-│tcp6   [::1]:631                    LISTEN   —                                      — localhost                                                                       │
-│tcp6   [::]:1716                    LISTEN   kdeconnectd                         4663 all ifaces                                                                      │
-│udp6   [::]:1716                    UNCONN   kdeconnectd                         4663 all ifaces                                                                      │
-│udp    100.66.79.100:3702           UNCONN   wsdd                               13420 interface                                                                       │
-│udp    172.16.206.26:3702           UNCONN   wsdd                               13420 interface                                                                       │
-│udp    172.17.0.1:3702              UNCONN   wsdd                               13420 interface                                                                       │
-│udp    172.18.0.1:3702              UNCONN   wsdd                               13420 interface                                                                       │
-│udp    172.19.0.1:3702              UNCONN   wsdd                               13420 interface                                                                       │
-│udp    172.20.0.1:3702              UNCONN   wsdd                               13420 interface                                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                               13420 interface                                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                               13420 interface                                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                               13420 interface                                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                               13420 interface                                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                               13420 interface                                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                               13420 interface                                                                       │
-│udp6   [fe80::2b22:4eb5:9e60:e729]: UNCONN   wsdd                               13420 interface                                                                       │
-│udp6   [fe80::5641:4d9a:e022:801b]: UNCONN   wsdd                               13420 interface                                                                       │
-│udp6   [fe80::fce6:49ff:fe53:49b1]: UNCONN   wsdd                               13420 interface                                                                       │
-│udp6   [ff02::c]:3702               UNCONN   wsdd                               13420 interface                                                                       │
-│udp6   [ff02::c]:3702               UNCONN   wsdd                               13420 interface                                                                       │
-│udp6   [ff02::c]:3702               UNCONN   wsdd                               13420 interface                                                                       │
-│tcp6   [::1]:5173                   LISTEN   node                               98232 localhost                                                                       │
-│tcp    100.66.79.100:5252           LISTEN   —                                      — interface                                                                       │
-│tcp6   [fd7a:115c:a1e0::d401:4fc4]: LISTEN   —                                      — interface                                                                       │
-│udp    0.0.0.0:5353                 UNCONN   zen                                10590 all ifaces                                                                      │
-│udp    0.0.0.0:5353                 UNCONN   stremio-runtime                     6668 all ifaces                                                                      │
-│udp    0.0.0.0:5353                 UNCONN   —                                      — all ifaces                                                                      │
+│Proto  Local address                State    Process                      PID Scope        Working dir                                                                │
+│tcp    0.0.0.0:22                   LISTEN   —                              — all ifaces   —                                                                          │
+│tcp6   [::]:22                      LISTEN   —                              — all ifaces   —                                                                          │
+│tcp    127.0.0.53:53                LISTEN   —                              — interface    —                                                                          │
+│tcp    127.0.0.54:53                LISTEN   —                              — interface    —                                                                          │
+│udp    127.0.0.53:53                UNCONN   —                              — interface    —                                                                          │
+│udp    127.0.0.54:53                UNCONN   —                              — interface    —                                                                          │
+│udp    127.0.0.1:323                UNCONN   —                              — localhost    —                                                                          │
+│udp6   [::1]:323                    UNCONN   —                              — localhost    —                                                                          │
+│tcp    100.66.79.100:443            LISTEN   —                              — interface    —                                                                          │
+│tcp6   [fd7a:115c:a1e0::d401:4fc4]: LISTEN   —                              — interface    —                                                                          │
+│tcp    127.0.0.1:631                LISTEN   —                              — localhost    —                                                                          │
+│tcp6   [::1]:631                    LISTEN   —                              — localhost    —                                                                          │
+│tcp6   [::]:1716                    LISTEN   kdeconnectd                 4663 all ifaces   /home/devansharora18                                                       │
+│udp6   [::]:1716                    UNCONN   kdeconnectd                 4663 all ifaces   /home/devansharora18                                                       │
+│udp    100.66.79.100:3702           UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    172.16.206.26:3702           UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    172.17.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    172.18.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    172.19.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    172.20.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp6   [fe80::2b22:4eb5:9e60:e729]: UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp6   [fe80::5641:4d9a:e022:801b]: UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp6   [fe80::fce6:49ff:fe53:49b1]: UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp6   [ff02::c]:3702               UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp6   [ff02::c]:3702               UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│udp6   [ff02::c]:3702               UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
+│tcp6   [::1]:5173                   LISTEN   node                       98232 localhost    /home/devansharora18/Documents/gesture_lang                                │
+│tcp    100.66.79.100:5252           LISTEN   —                              — interface    —                                                                          │
+│tcp6   [fd7a:115c:a1e0::d401:4fc4]: LISTEN   —                              — interface    —                                                                          │
+│udp    0.0.0.0:5353                 UNCONN   zen                        10590 all ifaces   /home/devansharora18                                                       │
+│udp    0.0.0.0:5353                 UNCONN   stremio-runtime             6668 all ifaces   /home/devansharora18                                                       │
+│udp    0.0.0.0:5353                 UNCONN   —                              — all ifaces   —                                                                          │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  1-5 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit

@@ -1041,6 +1041,7 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
                 .alignment(Alignment::Right),
         ),
         Cell::from(Span::styled("Scope", Style::default().fg(p.accent))),
+        Cell::from(Span::styled("Working dir", Style::default().fg(p.accent))),
         Cell::from(""),
     ])
     .style(Style::default().bg(p.bg));
@@ -1073,6 +1074,15 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
                     .style(Style::default().fg(p.dim)),
                 ),
                 Cell::from(Line::from(scope.0).style(Style::default().fg(scope.1))),
+                Cell::from(
+                    Line::from(
+                        s.cwd
+                            .as_deref()
+                            .map(|d| trunc(d, 44))
+                            .unwrap_or_else(|| "—".to_string()),
+                    )
+                    .style(Style::default().fg(p.dim)),
+                ),
                 Cell::from(""),
             ])
         })
@@ -1096,9 +1106,10 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
             Constraint::Length(6),
             Constraint::Length(28),
             Constraint::Length(8),
-            Constraint::Length(32),
+            Constraint::Length(24),
             Constraint::Length(7),
             Constraint::Length(12),
+            Constraint::Length(44),
             Constraint::Min(0),
         ],
     )

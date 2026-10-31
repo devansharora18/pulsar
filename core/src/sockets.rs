@@ -18,6 +18,8 @@ pub struct ListeningSocket {
     pub inode: u64,
     pub pid: Option<i32>,
     pub comm: Option<String>,
+    /// Working directory of the owning process (`/proc/<pid>/cwd`), when readable.
+    pub cwd: Option<String>,
 }
 
 impl ListeningSocket {
@@ -125,8 +127,9 @@ pub fn parse_table(text: &str, v6: bool) -> Vec<RawSocket> {
     out
 }
 
-/// Build `inode → (pid, comm)` by walking `/proc/<pid>/fd`. Only inodes in `wanted` are kept.
-pub fn map_inodes(wanted: &HashSet<u64>) -> HashMap<u64, (i32, String)> {
+/// Build `inode → (pid, comm, cwd)` by walking `/proc/<pid>/fd`. Only inodes in `wanted` are
+/// kept. `cwd` is the process's working directory (where it was launched from / chdir'd to).
+pub fn map_inodes(wanted: &HashSet<u64>) -> HashMap<u64, (i32, String, Option<String>)> {
     let mut out = HashMap::new();
     if wanted.is_empty() {
         return out;
@@ -156,7 +159,10 @@ pub fn map_inodes(wanted: &HashSet<u64>) -> HashMap<u64, (i32, String)> {
                 let comm = std::fs::read_to_string(format!("/proc/{pid}/comm"))
                     .map(|c| c.trim().to_string())
                     .unwrap_or_else(|_| "?".to_string());
-                out.insert(inode, (pid, comm));
+                let cwd = std::fs::read_link(format!("/proc/{pid}/cwd"))
+                    .ok()
+                    .map(|p| p.to_string_lossy().into_owned());
+                out.insert(inode, (pid, comm, cwd));
             }
         }
     }
@@ -226,8 +232,9 @@ fn collect() -> Vec<ListeningSocket> {
                 port: s.port,
                 state: state_label(&s.state_hex).to_string(),
                 inode: s.inode,
-                pid: owner.map(|(pid, _)| *pid),
-                comm: owner.map(|(_, comm)| comm.clone()),
+                pid: owner.map(|(pid, _, _)| *pid),
+                comm: owner.map(|(_, comm, _)| comm.clone()),
+                cwd: owner.and_then(|(_, _, cwd)| cwd.clone()),
             }
         })
         .collect();

@@ -1,44 +1,44 @@
- PULSAR   15.9 GB used (51.8%)  ·  14.6 GB cache reclaimable  ·  14.8 GB available  ·  cpu 11.8%  ·  7.6 W model  ·  558 procs
+ PULSAR   15.7 GB used (51.1%)  ·  14.3 GB cache reclaimable  ·  15.0 GB available  ·  cpu 6.1%  ·  7.3 W model  ·  559 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Catppuccin Mocha
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
 ╭ Memory ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ used 49%                                                                             cache 48%                                                                       │
+│ used 48%                                                                             cache 47%                                                                  fre… │
 │                                                                                                                                                                      │
-│ 15.9 GB really used  ·  14.6 GB cache you can reclaim  ·  14.8 GB available  ·  kernel+unattributed 1.6 GB                                                           │
+│ 15.7 GB really used  ·  14.3 GB cache you can reclaim  ·  15.0 GB available  ·  kernel+unattributed 1.3 GB                                                           │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭ Really used ──────────────────────────────────────────╮╭ Reclaimable ─────────────────────────────────────────╮╭ Kernel + unattributed ──────────────────────────────╮
-│15.9 GB                                                ││14.6 GB                                               ││1.6 GB                                               │
-│51.8% of total · PSI 0.0                               ││page cache + buffers + slab · shared 363 MB           ││kernel 966 MB · unattributed 647 MB · Σ PSS 14.3 GB  │
+│15.7 GB                                                ││14.3 GB                                               ││1.3 GB                                               │
+│51.1% of total · PSI 0.0                               ││page cache + buffers + slab · shared 371 MB           ││kernel 961 MB · unattributed 401 MB · Σ PSS 14.3 GB  │
 │                                                       ││                                                      ││                                                     │
 ╰───────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
 ╭ Memory treemap by app (PSS) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ Zen Browser                                                                 opencode        google\x…  ardui…                               Software                 │
-│ 6.3 GB                                                                      1.4 GB          900 MB     660 MB                               211 MB                   │
+│ Zen Browser                                                                                            ardui…                               node-22                  │
+│ 6.3 GB                                                                                                 663 MB                               231 MB                   │
 │                                                                                                                                                                      │
 │                                                                                                                                                abrt-dump-journ       │
-│                                                                                                                                                167 MB                │
-│                                                                                                                                                  python3.12          │
-│                                                                                                                                                  105 MB              │
+│                                                                                                                                                163 MB                │
+│                                                                                                                                                 python3.12           │
+│                                                                                                                                                 105 MB               │
 │                                                                                                                                                   Files              │
-│                                                                                                                                                     localsearch-3    │
-│                                                                                                                                                                      │
 │                                                                                                                                                     Terminal         │
+│                                                                                                                                                                      │
+│                                                                                                                                                      daemon          │
+│                                                                                                                                                      firewalld       │
 │                                                                                                                                                       Xwayland       │
-│                                                                                                                                                        mutter-x11-f… │
-│                                                                                                                                                         gnome\x2dwi… │
+│                                                                                                                                                        fwupd         │
+│                                                                                                                                                         rsyslogd     │
+│                                                                                                                                                           tailscaled │
 │                                                                                                                                                                      │
-│                                                                                                                                                          containerd  │
-│                                                                                                                                                            cloudfla… │
-│                                                                                                                                                             systemd  │
-│                                                                                                                                                              tuned-… │
-│                                                                                                                                                               Calen… │
-│                                                                                                                                                                Netw… │
-│                                                                                                                                                                      │
-│                                                                                                                                                                      │
-│                                                                                                                                                                      │
+│                                                                                                                                                            tuned     │
+│                                                                                                                                                             wifi\x2… │
+│                                                                                                                                                              speake… │
+│                                                                                                                                                               wirep… │
+│ opencode                                                                                                                                                       gjs-… │
+│ 1.4 GB                                                                                                                                                               │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                                      │
+│ google\x2dchrome                                                                                                                                                     │
+│ 899 MB                                                                                                                                                               │
 │                                                                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  reclaim: c drop caches  C drop all  m compact  w flush swap  p enable power metrics (pkexec)
