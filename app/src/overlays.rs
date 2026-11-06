@@ -3,7 +3,7 @@
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, BorderType, Borders, Clear, Paragraph, Wrap};
+use ratatui::widgets::{Block, BorderType, Borders, Clear, Padding, Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::state::{AppState, Overlay, PendingKind};
@@ -49,11 +49,23 @@ fn draw_confirm(f: &mut Frame, state: &AppState, area: Rect) {
     let Some(pending) = state.confirm.clone() else {
         return;
     };
-    let height = 8 + (pending.detail.len() / 60) as u16;
-    let box_area = centered(area, 72, height);
+
+    // Size the box from the wrapped detail so the action row can never be clipped.
+    let width = 78.min(area.width.saturating_sub(4)).max(40);
+    let inner_w = width.saturating_sub(4).max(20) as usize;
+    let detail_lines = pending.detail.chars().count().div_ceil(inner_w).max(1) as u16;
+    let height = (8 + detail_lines).min(area.height.saturating_sub(2)).max(8);
+    let box_area = centered(area, width, height);
     f.render_widget(Clear, box_area);
-    f.render_widget(popup(state, "Confirm", box_area), box_area);
-    let inner = popup(state, "Confirm", box_area).inner(box_area);
+
+    let title = match pending.kind {
+        PendingKind::KillGroup => "Confirm kill",
+        _ => "Confirm privileged action",
+    };
+    let block = popup(state, title, box_area).padding(Padding::new(1, 1, 0, 0));
+    let inner = block.inner(box_area);
+    f.render_widget(block, box_area);
+
     let verb = match pending.kind {
         PendingKind::KillGroup => "kill now",
         PendingKind::FlushSwap => "flush swap",
@@ -61,37 +73,51 @@ fn draw_confirm(f: &mut Frame, state: &AppState, area: Rect) {
         PendingKind::Compact => "compact",
         PendingKind::EnablePower => "apply udev rule",
     };
-    let text = vec![
-        Line::from(Span::styled(
-            pending.label.clone(),
-            Style::default().fg(p.fg).add_modifier(Modifier::BOLD),
-        )),
+
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled(
+                "⚠ ",
+                Style::default().fg(p.red).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                pending.label.clone(),
+                Style::default().fg(p.fg).add_modifier(Modifier::BOLD),
+            ),
+        ]),
         Line::from(""),
         Line::from(Span::styled(
             pending.detail.clone(),
             Style::default().fg(p.dim),
         )),
         Line::from(""),
-        if !pending.pids.is_empty() {
-            Line::from(Span::styled(
-                format!("targets {} process(es)", pending.pids.len()),
-                Style::default().fg(p.dim),
-            ))
-        } else {
-            Line::from(Span::styled(
-                "privileged action via pkexec",
-                Style::default().fg(p.orange),
-            ))
-        },
-        Line::from(""),
-        Line::from(vec![
-            Span::styled(" [y] ", Style::default().fg(p.bg).bg(p.accent)),
-            Span::styled(format!("{verb}   "), Style::default().fg(p.fg)),
-            Span::styled(" [n/Esc] ", Style::default().fg(p.bg).bg(p.border)),
-            Span::styled("cancel", Style::default().fg(p.dim)),
-        ]),
     ];
-    f.render_widget(Paragraph::new(text).wrap(Wrap { trim: true }), inner);
+    if pending.pids.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "Runs via pkexec; you will be asked to authenticate.",
+            Style::default().fg(p.orange),
+        )));
+    } else {
+        lines.push(Line::from(Span::styled(
+            format!("targets {} process(es)", pending.pids.len()),
+            Style::default().fg(p.dim),
+        )));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled(
+            " y ",
+            Style::default()
+                .fg(p.bg)
+                .bg(p.red)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(format!(" {verb}    "), Style::default().fg(p.fg)),
+        Span::styled(" n / Esc ", Style::default().fg(p.fg).bg(p.border)),
+        Span::styled(" cancel", Style::default().fg(p.dim)),
+    ]));
+
+    f.render_widget(Paragraph::new(lines).wrap(Wrap { trim: true }), inner);
 }
 
 fn draw_help(f: &mut Frame, state: &AppState, area: Rect) {
