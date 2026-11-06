@@ -1,7 +1,7 @@
- PULSAR   23.3 GB used (76.1%)  ·  6.9 GB cache reclaimable  ·  7.3 GB available  ·  cpu 12.0%  ·  9.3 W model  ·  567 procs
+ PULSAR   20.9 GB used (68.2%)  ·  8.0 GB cache reclaimable  ·  9.8 GB available  ·  cpu 7.9%  ·  7.3 W model  ·  577 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Catppuccin Mocha
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
- listening:97  exposed:34  unowned:27   j/k move  g/G top/bottom
+ listening:99  exposed:36  unowned:27   j/k move  g/G top/bottom  x kill owner
 ╭ Open ports (TCP listen / UDP bound) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │Proto  Local address                State    Process                      PID Scope        Working dir                                                                │
 │tcp    0.0.0.0:22                   LISTEN   —                              — all ifaces   —                                                                          │
@@ -38,9 +38,9 @@
 │udp6   [ff02::c]:3702               UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
 │tcp    127.0.0.1:4173               LISTEN   node                      631647 localhost    /home/devansharora18/Documents/GitHub/times…                               │
 │tcp    127.0.0.1:5037               LISTEN   adb                       404727 localhost    /home/devansharora18                                                       │
+│tcp6   [::1]:5173                   LISTEN   node                      645602 localhost    /home/devansharora18/Documents/GitHub/portf…                               │
 │tcp    100.66.79.100:5252           LISTEN   —                              — interface    —                                                                          │
 │tcp6   [fd7a:115c:a1e0::d401:4fc4]: LISTEN   —                              — interface    —                                                                          │
-│udp    0.0.0.0:5353                 UNCONN   adb                       404727 all ifaces   /home/devansharora18                                                       │
 │udp    0.0.0.0:5353                 UNCONN   adb                       404727 all ifaces   /home/devansharora18                                                       │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  1-5 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit

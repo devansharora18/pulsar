@@ -1,45 +1,45 @@
- PULSAR   23.3 GB used (76.1%)  ·  6.9 GB cache reclaimable  ·  7.3 GB available  ·  cpu 12.0%  ·  9.3 W model  ·  567 procs
+ PULSAR   20.9 GB used (68.2%)  ·  8.0 GB cache reclaimable  ·  9.8 GB available  ·  cpu 7.9%  ·  7.3 W model  ·  577 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Tokyo Night
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
- view:group  sort:Memory ▼  groups:425
+ view:group  sort:Memory ▼  groups:419
 ╭ Processes ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │Name                                                                                                              N        CPU      Memory     Disk IO     Power   PID│
-│▍ java                                                                                                              3     0.0%      5.8 GB     11.9 GB      0 mW 30532│
-│   ╰─ java  [PSS]                                                                                                         0.0%      2.5 GB      9.7 GB      0 mW 53053│
-│   ╰─ java  [PSS]                                                                                                         0.0%      2.9 GB      1.7 GB      0 mW 53092│
-│   ╰─ java  [PSS]                                                                                                         0.0%      361 MB      432 MB      0 mW 56777│
-│  qemu-system-x86_64                                                                                                1     9.9%      2.9 GB     21.3 GB    156 mW 57485│
-│   ╰─ qemu-system-x86  [PSS]                                                                                              9.9%      2.9 GB     21.3 GB    156 mW 55748│
-│▍ Zen Browser                                                                                                      33     0.0%      2.4 GB     10.2 GB      0 mW 07272│
-│▍ google\x2dchrome                                                                                                 19   134.0%      1.4 GB      880 MB     2.1 W 21131│
-│▍ opencode                                                                                                          7    14.9%      1.4 GB     14.2 GB    234 mW 58627│
-│▍ python3.12                                                                                                        6     0.0%      285 MB      8.9 MB      0 mW 89443│
-│▍ GitHub Desktop                                                                                                   15     0.0%      242 MB      1.6 GB      0 mW 97021│
-│▍ Chrome                                                                                                            5     5.0%      239 MB      3.4 GB     78 mW 21030│
-│▍ python3.14                                                                                                        3     0.0%      225 MB      1.8 GB      0 mW  1266│
-│  gnome-shell                                                                                                       1     5.0%      183 MB      1.2 GB     78 mW  4452│
-│  systemd-journal                                                                                                   1     0.0%      183 MB         0 B      0 mW   645│
-│  Files                                                                                                             1     0.0%      145 MB      160 MB      0 mW 52406│
-│▍ pipewire                                                                                                          2     5.0%     84.1 MB     23.6 MB     78 mW  4446│
-│  node-22                                                                                                           1     0.0%     63.5 MB         0 B      0 mW 31647│
-│▍ abrt-dump-journ                                                                                                   3     0.0%     55.8 MB         0 B      0 mW  1067│
-│  Software                                                                                                          1     0.0%     54.3 MB      576 MB      0 mW  5874│
-│  Terminal                                                                                                          1     5.0%     52.1 MB     85.5 MB     78 mW 14338│
-│▍ systemd                                                                                                           3     0.0%     40.6 MB         0 B      0 mW     1│
-│  tailscaled                                                                                                        1     0.0%     34.8 MB         0 B      0 mW  1075│
-│  localsearch-3                                                                                                     1     0.0%     31.6 MB      2.1 GB      0 mW  5882│
-│  cloudflared                                                                                                       1     0.0%     28.6 MB      107 MB      0 mW  4106│
+│  qemu-system-x86_64                                                                                                1     9.8%      2.8 GB     21.9 GB    138 mW 57485│
+│   ╰─ qemu-system-x86  [PSS]                                                                                              9.8%      2.8 GB     21.9 GB    138 mW 55748│
+│  java                                                                                                              1     0.0%      2.6 GB     12.0 GB      0 mW 30532│
+│   ╰─ java  [PSS]                                                                                                         0.0%      2.6 GB     12.0 GB      0 mW 53053│
+│▍ Zen Browser                                                                                                      34     4.9%      2.5 GB     10.7 GB     69 mW 07272│
+│▍ opencode                                                                                                          7    19.6%      1.4 GB     15.0 GB    277 mW 58627│
+│▍ Chromium                                                                                                         14     4.9%      1.2 GB      472 MB     69 mW 43108│
+│▍ google\x2dchrome                                                                                                 17     0.0%      1.1 GB      894 MB      0 mW 21131│
+│▍ VSCodium                                                                                                          7     4.9%      456 MB      120 MB     69 mW 43118│
+│▍ python3.12                                                                                                        6     0.0%      283 MB      4.1 MB      0 mW 89443│
+│▍ GitHub Desktop                                                                                                   15     0.0%      259 MB      1.7 GB      0 mW 97021│
+│▍ python3.14                                                                                                        3     0.0%      226 MB      1.9 GB      0 mW  1266│
+│▍ Chrome                                                                                                            5     0.0%      223 MB      3.6 GB      0 mW 21030│
+│  systemd-journal                                                                                                   1     4.9%      203 MB         0 B     69 mW   645│
+│  gnome-shell                                                                                                       1    14.7%      183 MB      1.2 GB    207 mW  4452│
+│  Files                                                                                                             1     0.0%      144 MB      162 MB      0 mW 52406│
+│▍ pipewire                                                                                                          2     4.9%     84.0 MB     24.2 MB     69 mW  4446│
+│▍ abrt-dump-journ                                                                                                   3     0.0%     56.4 MB         0 B      0 mW  1067│
+│  Terminal                                                                                                          1    24.5%     52.0 MB     85.6 MB    346 mW 14338│
+│  Software                                                                                                          1     0.0%     46.7 MB      576 MB      0 mW  5874│
+│  rsyslogd                                                                                                          1     0.0%     42.7 MB         0 B      0 mW  1105│
+│▍ systemd                                                                                                           3     4.9%     40.2 MB         0 B     69 mW     1│
+│  localsearch-3                                                                                                     1     0.0%     38.1 MB      2.2 GB      0 mW  5882│
+│  node-22                                                                                                           1     0.0%     33.1 MB         0 B      0 mW 31647│
+│  tailscaled                                                                                                        1     0.0%     30.2 MB         0 B      0 mW  1075│
+│  cloudflared                                                                                                       1     0.0%     29.6 MB      123 MB      0 mW  4106│
 │  dockerd                                                                                                           1     0.0%     24.9 MB         0 B      0 mW  1380│
-│▍ Stremio Service                                                                                                   7     0.0%     22.8 MB      225 MB      0 mW  4672│
-│  ollama                                                                                                            1     0.0%     21.8 MB         0 B      0 mW  1102│
-│▍ systemd-userwor                                                                                                   3     0.0%     20.3 MB         0 B      0 mW 42450│
-│  fwupd                                                                                                             1     0.0%     18.6 MB         0 B      0 mW  6737│
-│  containerd                                                                                                        1     0.0%     18.0 MB         0 B      0 mW  1106│
+│  ollama                                                                                                            1     0.0%     23.4 MB         0 B      0 mW  1102│
+│▍ systemd-userwor                                                                                                   3     9.8%     20.9 MB         0 B    138 mW 60889│
+│▍ Stremio Service                                                                                                   7     0.0%     19.7 MB      232 MB      0 mW  4672│
+│  fwupd                                                                                                             1     0.0%     18.1 MB         0 B      0 mW  6737│
+│  containerd                                                                                                        1     0.0%     17.7 MB         0 B      0 mW  1106│
 │  NetworkManager                                                                                                    1     0.0%     17.1 MB         0 B      0 mW   913│
-│  firewalld                                                                                                         1     0.0%     16.7 MB         0 B      0 mW   912│
-│▍ pulsar                                                                                                            2    24.8%     16.5 MB      3.8 MB    389 mW 39262│
+│  firewalld                                                                                                         1     0.0%     16.5 MB         0 B      0 mW   912│
+│▍ pulsar                                                                                                            2    24.5%     16.1 MB      2.3 MB    346 mW 54347│
 │  tuned                                                                                                             1     0.0%     16.0 MB         0 B      0 mW  1078│
-│  gnome\x2dwifi\x2dpanel                                                                                            1     0.0%     15.7 MB     26.2 MB      0 mW 18547│
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  select a group (j/k) for actions
 

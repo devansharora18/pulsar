@@ -1,46 +1,46 @@
- PULSAR   23.3 GB used (76.1%)  ·  6.9 GB cache reclaimable  ·  7.3 GB available  ·  cpu 12.0%  ·  9.3 W model  ·  567 procs
+ PULSAR   20.9 GB used (68.2%)  ·  8.0 GB cache reclaimable  ·  9.8 GB available  ·  cpu 7.9%  ·  7.3 W model  ·  577 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Tokyo Night
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
 ╭ Memory ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ used 73%                                                                                                                     cache 23%
+│ used 65%                                                                                                       cache 26%                                 free 7%     │
 │                                                                                                                                                                      │
-│ 23.3 GB really used  ·  6.9 GB cache you can reclaim  ·  7.3 GB available  ·  kernel+unattributed 6.7 GB                                                             │
+│ 20.9 GB really used  ·  8.0 GB cache you can reclaim  ·  9.8 GB available  ·  kernel+unattributed 6.4 GB                                                             │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭ Really used ──────────────────────────────────────────╮╭ Reclaimable ─────────────────────────────────────────╮╭ Kernel + unattributed ──────────────────────────────╮
-│23.3 GB                                                ││6.9 GB                                                ││6.7 GB                                               │
-│76.1% of total · PSI 0.0                               ││page cache + buffers + slab · shared 184 MB           ││kernel 1023 MB · unattributed 5.7 GB · Σ PSS 16.6 GB │
+│20.9 GB                                                ││8.0 GB                                                ││6.4 GB                                               │
+│68.2% of total · PSI 0.0                               ││page cache + buffers + slab · shared 207 MB           ││kernel 1.0 GB · unattributed 5.3 GB · Σ PSS 14.5 GB  │
 │                                                       ││                                                      ││                                                     │
 ╰───────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
 ╭ Memory treemap by app (PSS) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ java                                                                                                              google\x2dc…  opencode       python3.12            │
-│ 5.8 GB                                                                                                            1.4 GB        1.4 GB         285 MB                │
+│ qemu-system-x86_64                                             Zen Browser                  opencode        Chromium     google\x2d…       python3.12                │
+│ 2.8 GB                                                         2.5 GB                       1.4 GB          1.2 GB       1.1 GB            283 MB                    │
 │                                                                                                                                                                      │
-│                                                                                                                                                GitHub Desktop        │
-│                                                                                                                                                242 MB                │
+│                                                                                                                                                python3.14            │
+│                                                                                                                                                226 MB                │
 │                                                                                                                                                                      │
-│                                                                                                                                                   python3.14         │
-│                                                                                                                                                   225 MB             │
-│                                                                                                                                                                      │
-│                                                                                                                                                     systemd-journal  │
-│                                                                                                                                                     183 MB           │
-│                                                                                                                                                                      │
-│                                                                                                                                                        pipewire      │
-│                                                                                                                                                        84.1 MB       │
-│                                                                                                                                                         abrt-dump-j… │
-│ qemu-system-x86_64                                                                                                                                       Terminal    │
-│ 2.9 GB                                                                                                                                                               │
+│                                                                                                                                                   systemd-journal    │
+│                                                                                                                                                   203 MB             │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
+│                                                                                                                                                      Files           │
+│                                                                                                                                                      144 MB          │
+│                                                                                                                                                        abrt-dump-jo… │
+│                                                                                                                                                                      │
+│                                                                                                                                                         Software     │
+│ java                                                                                                                                                                 │
+│ 2.6 GB                                                                                                                                                               │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│ Zen Browser                                                                                                                                                          │
-│ 2.4 GB                                                                                                                                                               │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- reclaim: c drop caches  C drop all  m compact  flush swap disabled: needs ~19.4 GB free to swap back in, only 7.3 GB available p enable power metrics (pkexec)
+ reclaim: c drop caches  C drop all  m compact  flush swap disabled: needs ~16.2 GB free to swap back in, only 9.8 GB available p enable power metrics (pkexec)
 
  1-5 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit

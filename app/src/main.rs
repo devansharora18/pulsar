@@ -178,6 +178,10 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
                 state.ports_selected = count.saturating_sub(1);
                 return;
             }
+            KeyCode::Char('x') => {
+                kill_selected_port(state);
+                return;
+            }
             _ => {}
         }
     }
@@ -199,7 +203,10 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
         KeyCode::Char('5') => state.view = View::Ports,
         KeyCode::Char('/') => {
             state.search_active = true;
-            state.view = View::Processes;
+            // Keep the Ports view; otherwise search means the process table.
+            if state.view != View::Ports {
+                state.view = View::Processes;
+            }
         }
         KeyCode::Char('?') => state.overlay = Some(Overlay::Help),
         KeyCode::Char('a') => state.overlay = Some(Overlay::Activity),
@@ -232,6 +239,37 @@ fn view_action_keys(state: &mut AppState, k: KeyEvent) {
         View::Processes => process_keys(state, k),
         View::Memory => memory_keys(state, k),
         _ => {}
+    }
+}
+
+fn kill_selected_port(state: &mut AppState) {
+    let Some(s) = state.selected_port() else {
+        state.set_message("no socket selected");
+        return;
+    };
+    let (pid, comm, port, proto) = (s.pid, s.comm.clone(), s.port, s.proto.clone());
+    let Some(pid) = pid else {
+        state.set_message("cannot kill: no owning process readable (permission or kernel socket)");
+        return;
+    };
+    let name = comm.unwrap_or_else(|| "?".to_string());
+    let label = format!("{name} (pid {pid}) · {proto}:{port}");
+    let detail = format!(
+        "Send SIGTERM to {name} (pid {pid}), which owns {proto} port {port}, then SIGKILL \
+         survivors after 3s."
+    );
+    if state.config.confirm_kill {
+        state.confirm = Some(Pending {
+            kind: PendingKind::KillGroup,
+            label,
+            detail,
+            pids: vec![pid],
+        });
+    } else {
+        state.log(pulsar_core::actions::terminate_then_kill(
+            vec![pid],
+            std::time::Duration::from_secs(3),
+        ));
     }
 }
 

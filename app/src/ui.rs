@@ -1019,7 +1019,9 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
     tool.push(Span::styled("   j/k", Style::default().fg(p.accent)));
     tool.push(Span::styled(" move  ", Style::default().fg(p.dim)));
     tool.push(Span::styled("g/G", Style::default().fg(p.accent)));
-    tool.push(Span::styled(" top/bottom", Style::default().fg(p.dim)));
+    tool.push(Span::styled(" top/bottom  ", Style::default().fg(p.dim)));
+    tool.push(Span::styled("x", Style::default().fg(p.accent)));
+    tool.push(Span::styled(" kill owner", Style::default().fg(p.dim)));
     f.render_widget(Paragraph::new(Line::from(tool)), chunks[0]);
 
     let header = Row::new(vec![

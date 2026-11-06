@@ -78,7 +78,7 @@ are not split across processes); the Power view reconciles the two explicitly.
 | `/` | search |
 | `j` `k` / arrows | move selection |
 | `Enter` | expand / collapse group |
-| `x` / `k` | kill selected group |
+| `x` / `k` | kill selected group (in Ports: kill the selected port's owner) |
 | `t` | terminate · `z`/`u` suspend/resume |
 | `+` `-` | renice selected |
 | `o` | open exe location · `p` pin |

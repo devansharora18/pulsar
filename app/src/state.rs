@@ -337,6 +337,19 @@ impl AppState {
             .count()
     }
 
+    /// The socket currently selected in the Ports view (filtered + sorted like the table).
+    pub fn selected_port(&self) -> Option<&ListeningSocket> {
+        let mut idx: Vec<usize> = (0..self.snapshot.sockets.len())
+            .filter(|i| self.port_matches(&self.snapshot.sockets[*i]))
+            .collect();
+        if idx.is_empty() {
+            return None;
+        }
+        idx.sort_by_key(|i| self.snapshot.sockets[*i].port);
+        let i = *idx.get(self.ports_selected.min(idx.len() - 1))?;
+        self.snapshot.sockets.get(i)
+    }
+
     /// Move the ports-list selection, clamped to the filtered list.
     pub fn move_port_selection(&mut self, delta: i32) {
         let count = self.port_count();
