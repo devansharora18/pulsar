@@ -41,7 +41,7 @@ fn popup(state: &AppState, title: &str, _area: Rect) -> Block<'static> {
             format!(" {title} "),
             Style::default().fg(p.accent).add_modifier(Modifier::BOLD),
         ))
-        .style(Style::default().bg(p.bg))
+        .style(Style::default().bg(p.base))
 }
 
 fn draw_confirm(f: &mut Frame, state: &AppState, area: Rect) {
@@ -78,11 +78,11 @@ fn draw_confirm(f: &mut Frame, state: &AppState, area: Rect) {
         Line::from(vec![
             Span::styled(
                 "⚠ ",
-                Style::default().fg(p.red).add_modifier(Modifier::BOLD),
+                Style::default().fg(p.crit).add_modifier(Modifier::BOLD),
             ),
             Span::styled(
                 pending.label.clone(),
-                Style::default().fg(p.fg).add_modifier(Modifier::BOLD),
+                Style::default().fg(p.text).add_modifier(Modifier::BOLD),
             ),
         ]),
         Line::from(""),
@@ -95,7 +95,7 @@ fn draw_confirm(f: &mut Frame, state: &AppState, area: Rect) {
     if pending.pids.is_empty() {
         lines.push(Line::from(Span::styled(
             "Runs via pkexec; you will be asked to authenticate.",
-            Style::default().fg(p.orange),
+            Style::default().fg(p.warn),
         )));
     } else {
         lines.push(Line::from(Span::styled(
@@ -108,12 +108,12 @@ fn draw_confirm(f: &mut Frame, state: &AppState, area: Rect) {
         Span::styled(
             " y ",
             Style::default()
-                .fg(p.bg)
-                .bg(p.red)
+                .fg(p.base)
+                .bg(p.crit)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled(format!(" {verb}    "), Style::default().fg(p.fg)),
-        Span::styled(" n / Esc ", Style::default().fg(p.fg).bg(p.border)),
+        Span::styled(format!(" {verb}    "), Style::default().fg(p.text)),
+        Span::styled(" n / Esc ", Style::default().fg(p.text).bg(p.border)),
         Span::styled(" cancel", Style::default().fg(p.dim)),
     ]));
 
@@ -152,7 +152,7 @@ fn draw_help(f: &mut Frame, state: &AppState, area: Rect) {
         .map(|(k, d)| {
             Line::from(vec![
                 Span::styled(format!(" {k:<14}"), Style::default().fg(p.accent)),
-                Span::styled(*d, Style::default().fg(p.fg)),
+                Span::styled(*d, Style::default().fg(p.text)),
             ])
         })
         .collect();
@@ -178,18 +178,18 @@ fn draw_activity(f: &mut Frame, state: &AppState, area: Rect) {
     }
     for a in state.activity.iter().rev().take(inner.height as usize) {
         let (mark, color) = if !a.ok {
-            ("✗", p.red)
+            ("✗", p.crit)
         } else if a.privileged {
-            ("◆", p.orange)
+            ("◆", p.warn)
         } else {
-            ("✓", p.green)
+            ("✓", p.ok)
         };
         lines.push(Line::from(vec![
             Span::styled(format!(" {mark} "), Style::default().fg(color)),
             Span::styled(format!("{:<20}", a.action), Style::default().fg(p.accent)),
             Span::styled(
                 format!("{}: {}", a.target, a.message),
-                Style::default().fg(p.fg),
+                Style::default().fg(p.text),
             ),
         ]));
     }
@@ -269,12 +269,12 @@ fn draw_settings(f: &mut Frame, state: &AppState, area: Rect) {
         )),
         Line::from(""),
         Line::from(vec![
-            Span::styled(" [S] ", Style::default().fg(p.bg).bg(p.accent)),
-            Span::styled("save   ", Style::default().fg(p.fg)),
-            Span::styled(" [w] ", Style::default().fg(p.bg).bg(p.border)),
-            Span::styled("write theme file   ", Style::default().fg(p.fg)),
-            Span::styled(" [Esc] ", Style::default().fg(p.bg).bg(p.border)),
-            Span::styled("close", Style::default().fg(p.fg)),
+            Span::styled(" [S] ", Style::default().fg(p.base).bg(p.accent)),
+            Span::styled("save   ", Style::default().fg(p.text)),
+            Span::styled(" [w] ", Style::default().fg(p.base).bg(p.border)),
+            Span::styled("write theme file   ", Style::default().fg(p.text)),
+            Span::styled(" [Esc] ", Style::default().fg(p.base).bg(p.border)),
+            Span::styled("close", Style::default().fg(p.text)),
         ]),
     ];
     f.render_widget(Paragraph::new(lines), inner);
@@ -282,7 +282,7 @@ fn draw_settings(f: &mut Frame, state: &AppState, area: Rect) {
 
 fn section<'a>(p: &crate::theme_map::Palette, label: &str, value: &str, hint: &str) -> Line<'a> {
     Line::from(vec![
-        Span::styled(format!(" {label:<22}"), Style::default().fg(p.fg)),
+        Span::styled(format!(" {label:<22}"), Style::default().fg(p.text)),
         Span::styled(
             format!("{value:<16}"),
             Style::default().fg(p.accent).add_modifier(Modifier::BOLD),

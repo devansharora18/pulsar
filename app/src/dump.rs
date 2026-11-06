@@ -16,6 +16,17 @@ use crate::ui;
 const COLS: u16 = 168;
 const ROWS: u16 = 46;
 
+fn dump_size() -> (u16, u16) {
+    if let Ok(v) = std::env::var("PULSAR_DUMP_SIZE") {
+        if let Some((w, h)) = v.split_once('x') {
+            if let (Ok(w), Ok(h)) = (w.parse(), h.parse()) {
+                return (w, h);
+            }
+        }
+    }
+    (COLS, ROWS)
+}
+
 pub fn run(dir: PathBuf, png: bool, mut rx: watch::Receiver<SystemSnapshot>) {
     let _ = std::fs::create_dir_all(&dir);
     // Wait for the history to fill (dump mode samples at 100 ms).
@@ -23,7 +34,7 @@ pub fn run(dir: PathBuf, png: bool, mut rx: watch::Receiver<SystemSnapshot>) {
     state.config.refresh_ms = 100;
     for _ in 0..400 {
         if rx.has_changed().unwrap_or(false) {
-            state.snapshot = rx.borrow_and_update().clone();
+            state.ingest(rx.borrow_and_update().clone());
             if state.snapshot.proc_count > 0 && state.snapshot.seq >= 110 {
                 break;
             }
@@ -49,8 +60,10 @@ pub fn run(dir: PathBuf, png: bool, mut rx: watch::Receiver<SystemSnapshot>) {
                 for g in state.snapshot.groups.iter().take(2) {
                     state.expanded.insert(g.key.clone());
                 }
+                state.selected = state.snapshot.groups.first().map(|g| g.key.clone());
             }
-            let mut terminal = Terminal::new(TestBackend::new(COLS, ROWS)).expect("test terminal");
+            let mut terminal = Terminal::new(TestBackend::new(dump_size().0, dump_size().1))
+                .expect("test terminal");
             terminal.draw(|f| ui::draw(f, &mut state)).expect("draw");
             let buf = terminal.backend().buffer().clone();
 
@@ -61,7 +74,7 @@ pub fn run(dir: PathBuf, png: bool, mut rx: watch::Receiver<SystemSnapshot>) {
             println!("wrote {}", txt.display());
             if png {
                 let out = dir.join(format!("{base}.png"));
-                match rasterize(&buf, state.palette.bg, &out) {
+                match rasterize(&buf, state.palette.base, &out) {
                     Ok(()) => println!("wrote {}", out.display()),
                     Err(e) => eprintln!("png dump failed: {e}"),
                 }
@@ -119,32 +132,57 @@ fn rgb(c: Color, fallback_bg: Color) -> (u8, u8, u8) {
     }
 }
 
-fn load_font() -> Option<fontdue::Font> {
-    let mut candidates: Vec<PathBuf> = vec![
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/fonts/JetBrainsMono-Regular.ttf"),
-        PathBuf::from("/usr/share/fonts/jetbrains-mono/JetBrainsMono-Regular.ttf"),
-        PathBuf::from("/usr/share/fonts/dejavu-sans-mono-fonts/DejaVuSansMono.ttf"),
-        PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"),
-    ];
-    if let Ok(list) = std::fs::read_dir("/usr/share/fonts") {
-        for e in list.flatten() {
-            candidates.push(e.path());
-        }
-    }
-    for c in candidates {
-        if c.extension().and_then(|e| e.to_str()) == Some("ttf") {
-            if let Ok(bytes) = std::fs::read(&c) {
-                if let Ok(f) = fontdue::Font::from_bytes(bytes, fontdue::FontSettings::default()) {
-                    return Some(f);
+fn load_one(path: &std::path::Path) -> Option<fontdue::Font> {
+    let bytes = std::fs::read(path).ok()?;
+    fontdue::Font::from_bytes(bytes, fontdue::FontSettings::default()).ok()
+}
+
+fn load_fonts() -> Option<(fontdue::Font, Option<fontdue::Font>)> {
+    // Prefer the Nerd Font build when installed: same typeface, plus braille and icons.
+    let home_nerd = std::env::var("HOME")
+        .ok()
+        .map(|h| PathBuf::from(h).join(".local/share/fonts/JetBrainsMonoNerdFontMono-Regular.ttf"));
+    let bundled =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/fonts/JetBrainsMono-Regular.ttf");
+    let primary = home_nerd
+        .as_ref()
+        .and_then(|p| load_one(p))
+        .or_else(|| load_one(&bundled))
+        .or_else(|| {
+            let mut dirs = vec![PathBuf::from("/usr/share/fonts")];
+            if let Ok(list) = std::fs::read_dir("/usr/share/fonts") {
+                for e in list.flatten() {
+                    dirs.push(e.path());
                 }
             }
-        }
-    }
-    None
+            for d in dirs {
+                if let Ok(list) = std::fs::read_dir(d) {
+                    for e in list.flatten() {
+                        let p = e.path();
+                        if p.extension().and_then(|x| x.to_str()) == Some("ttf") {
+                            if let Some(f) = load_one(&p) {
+                                return Some(f);
+                            }
+                        }
+                    }
+                }
+            }
+            None
+        })?;
+    // Braille fallback for the bundled (non-Nerd) font.
+    let fallback = [
+        "/usr/share/fonts/google-noto-vf/NotoSansMono[wght].ttf",
+        "/usr/share/fonts/noto/NotoSansMono-Regular.ttf",
+        "/usr/share/fonts/dejavu-sans-mono-fonts/DejaVuSansMono.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    ]
+    .iter()
+    .find_map(|p| load_one(std::path::Path::new(p)));
+    Some((primary, fallback))
 }
 
 fn rasterize(buf: &Buffer, default_bg: Color, path: &std::path::Path) -> Result<(), String> {
-    let font = load_font().ok_or_else(|| "no monospace TTF font found".to_string())?;
+    let (font, fallback) = load_fonts().ok_or_else(|| "no monospace TTF font found".to_string())?;
     let px = 17.0f32;
     let line = font
         .horizontal_line_metrics(px)
@@ -188,7 +226,18 @@ fn rasterize(buf: &Buffer, default_bg: Color, path: &std::path::Path) -> Result<
                 continue;
             }
             let (fg_r, fg_g, fg_b) = rgb(cell.fg, Color::Rgb(230, 230, 230));
-            let (metrics, bitmap) = font.rasterize(ch, px);
+            let use_font = if font.lookup_glyph_index(ch) != 0 {
+                &font
+            } else if let Some(fb) = &fallback {
+                if fb.lookup_glyph_index(ch) != 0 {
+                    fb
+                } else {
+                    &font
+                }
+            } else {
+                &font
+            };
+            let (metrics, bitmap) = use_font.rasterize(ch, px);
             let cell_x = (x as u32 * cell_w) as i32;
             let baseline = (y as u32 * cell_h) as i32 + ascent.round() as i32;
             for gy in 0..metrics.height {

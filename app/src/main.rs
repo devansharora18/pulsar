@@ -2,6 +2,7 @@
 
 mod dump;
 mod format;
+mod graph;
 mod overlays;
 mod state;
 mod theme_map;
@@ -53,12 +54,12 @@ fn run(
     mut rx: tokio::sync::watch::Receiver<pulsar_core::snapshot::SystemSnapshot>,
 ) -> std::io::Result<()> {
     if rx.has_changed().unwrap_or(false) {
-        state.snapshot = rx.borrow_and_update().clone();
+        state.ingest(rx.borrow_and_update().clone());
     }
     loop {
         // Ingest the latest snapshot without blocking.
         if rx.has_changed().unwrap_or(false) {
-            state.snapshot = rx.borrow_and_update().clone();
+            state.ingest(rx.borrow_and_update().clone());
             if CLI.get().map(|c| c.once).unwrap_or(false) {
                 state.should_quit = true;
             }
@@ -174,8 +175,17 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
                 return;
             }
             KeyCode::Char('G') => {
-                let count = state.port_count();
+                let count = state.port_row_count();
                 state.ports_selected = count.saturating_sub(1);
+                return;
+            }
+            KeyCode::Enter => {
+                state.toggle_port_group();
+                return;
+            }
+            KeyCode::Char('u') => {
+                state.ports_grouped = !state.ports_grouped;
+                state.ports_selected = 0;
                 return;
             }
             KeyCode::Char('x') => {
@@ -243,31 +253,61 @@ fn view_action_keys(state: &mut AppState, k: KeyEvent) {
 }
 
 fn kill_selected_port(state: &mut AppState) {
-    let Some(s) = state.selected_port() else {
-        state.set_message("no socket selected");
-        return;
+    let (pids, label, detail) = if state.ports_grouped {
+        let Some(g) = state.selected_port_group() else {
+            state.set_message("no port group selected");
+            return;
+        };
+        let pids = g.pids();
+        if pids.is_empty() {
+            state.set_message(
+                "cannot kill: no owning process readable (permission or kernel socket)",
+            );
+            return;
+        }
+        let name = g.name.clone();
+        let ports = g.ports(40);
+        (
+            pids,
+            format!("{name} · {} socket(s)", g.count()),
+            format!(
+                "Send SIGTERM to {name}, which owns {} socket(s) on port(s) {ports}, then \
+                 SIGKILL survivors after 3s.",
+                g.count()
+            ),
+        )
+    } else {
+        let Some(s) = state.selected_port() else {
+            state.set_message("no socket selected");
+            return;
+        };
+        let (pid, comm, port, proto) = (s.pid, s.comm.clone(), s.port, s.proto.clone());
+        let Some(pid) = pid else {
+            state.set_message(
+                "cannot kill: no owning process readable (permission or kernel socket)",
+            );
+            return;
+        };
+        let name = comm.unwrap_or_else(|| "?".to_string());
+        (
+            vec![pid],
+            format!("{name} (pid {pid}) · {proto}:{port}"),
+            format!(
+                "Send SIGTERM to {name} (pid {pid}), which owns {proto} port {port}, then \
+                 SIGKILL survivors after 3s."
+            ),
+        )
     };
-    let (pid, comm, port, proto) = (s.pid, s.comm.clone(), s.port, s.proto.clone());
-    let Some(pid) = pid else {
-        state.set_message("cannot kill: no owning process readable (permission or kernel socket)");
-        return;
-    };
-    let name = comm.unwrap_or_else(|| "?".to_string());
-    let label = format!("{name} (pid {pid}) · {proto}:{port}");
-    let detail = format!(
-        "Send SIGTERM to {name} (pid {pid}), which owns {proto} port {port}, then SIGKILL \
-         survivors after 3s."
-    );
     if state.config.confirm_kill {
         state.confirm = Some(Pending {
             kind: PendingKind::KillGroup,
             label,
             detail,
-            pids: vec![pid],
+            pids,
         });
     } else {
         state.log(pulsar_core::actions::terminate_then_kill(
-            vec![pid],
+            pids,
             std::time::Duration::from_secs(3),
         ));
     }

@@ -146,11 +146,20 @@ pub struct AppState {
     pub hide_kernel: bool,
     pub selected: Option<String>,
     pub ports_selected: usize,
+    pub ports_grouped: bool,
+    pub ports_expanded: HashSet<String>,
     pub activity: Vec<ActionResult>,
     pub confirm: Option<Pending>,
     pub overlay: Option<Overlay>,
     pub message: Option<(String, Instant)>,
     pub should_quit: bool,
+    /// Smoothed headline values (EMA, 1 Hz) so bars do not jitter.
+    pub cpu_ema: f64,
+    pub power_ema: f64,
+    pub core_ema: Vec<f64>,
+    /// Rolling per-core usage for the tile sparklines.
+    pub core_hist: Vec<Vec<f64>>,
+    last_seq: u64,
     order: Vec<String>,
     order_deadline: Instant,
     order_params: (SortKey, bool, ViewMode, bool),
@@ -183,15 +192,54 @@ impl AppState {
             hide_kernel,
             selected: None,
             ports_selected: 0,
+            ports_grouped: true,
+            ports_expanded: HashSet::new(),
             activity: Vec::new(),
             confirm: None,
             overlay: None,
             message: None,
             should_quit: false,
+            cpu_ema: 0.0,
+            power_ema: 0.0,
+            core_ema: Vec::new(),
+            core_hist: Vec::new(),
+            last_seq: 0,
             order: Vec::new(),
             order_deadline: Instant::now(),
             order_params: (SortKey::Pss, true, ViewMode::Group, false),
         }
+    }
+
+    /// Fold a new snapshot into the UI state: EMA headline values and per-core history.
+    pub fn ingest(&mut self, snap: SystemSnapshot) {
+        if snap.seq != self.last_seq {
+            let n = snap.cpu.cores.len();
+            if self.core_ema.len() != n {
+                self.core_ema = vec![0.0; n];
+                self.core_hist = vec![Vec::new(); n];
+            }
+            let first = self.last_seq == 0;
+            let alpha = 0.25;
+            let ema = |prev: f64, v: f64| {
+                if first {
+                    v
+                } else {
+                    prev + alpha * (v - prev)
+                }
+            };
+            self.cpu_ema = ema(self.cpu_ema, snap.cpu.overall_usage_pct);
+            self.power_ema = ema(self.power_ema, snap.power.total_w);
+            for (i, c) in snap.cpu.cores.iter().enumerate() {
+                self.core_ema[i] = ema(self.core_ema[i], c.usage_pct);
+                let h = &mut self.core_hist[i];
+                h.push(c.usage_pct);
+                if h.len() > 30 {
+                    h.remove(0);
+                }
+            }
+            self.last_seq = snap.seq;
+        }
+        self.snapshot = snap;
     }
 
     pub fn set_message(&mut self, m: impl Into<String>) {
@@ -337,6 +385,73 @@ impl AppState {
             .count()
     }
 
+    /// Sockets grouped by owning process (pid + comm), or one `unowned` bucket.
+    pub fn port_groups(&self) -> Vec<PortGroup<'_>> {
+        let mut map: std::collections::HashMap<String, PortGroup<'_>> =
+            std::collections::HashMap::new();
+        for s in self
+            .snapshot
+            .sockets
+            .iter()
+            .filter(|s| self.port_matches(s))
+        {
+            let key = match s.pid {
+                Some(pid) => format!("{pid}:{}", s.comm.clone().unwrap_or_default()),
+                None => "unowned".to_string(),
+            };
+            let g = map.entry(key.clone()).or_insert_with(|| PortGroup {
+                key,
+                name: s.comm.clone().unwrap_or_else(|| "unowned".to_string()),
+                pid: s.pid,
+                sockets: Vec::new(),
+                cwd: None,
+                all_ifaces: 0,
+                iface: 0,
+                localhost: 0,
+            });
+            g.sockets.push(s);
+            if g.cwd.is_none() {
+                g.cwd = s.cwd.clone();
+            }
+            if s.is_wildcard() {
+                g.all_ifaces += 1;
+            } else if s.addr == "127.0.0.1" || s.addr == "::1" {
+                g.localhost += 1;
+            } else {
+                g.iface += 1;
+            }
+        }
+        let mut groups: Vec<PortGroup<'_>> = map.into_values().collect();
+        groups.sort_by(|a, b| b.count().cmp(&a.count()).then_with(|| a.name.cmp(&b.name)));
+        groups
+    }
+
+    pub fn port_row_count(&self) -> usize {
+        if self.ports_grouped {
+            self.port_groups().len()
+        } else {
+            self.port_count()
+        }
+    }
+
+    pub fn selected_port_group(&self) -> Option<PortGroup<'_>> {
+        let groups = self.port_groups();
+        if groups.is_empty() {
+            return None;
+        }
+        let i = self.ports_selected.min(groups.len() - 1);
+        Some(groups.into_iter().nth(i).expect("index in range"))
+    }
+
+    pub fn toggle_port_group(&mut self) {
+        if let Some(g) = self.selected_port_group() {
+            let key = g.key.clone();
+            if !self.ports_expanded.remove(&key) {
+                self.ports_expanded.insert(key);
+            }
+        }
+    }
+
     /// The socket currently selected in the Ports view (filtered + sorted like the table).
     pub fn selected_port(&self) -> Option<&ListeningSocket> {
         let mut idx: Vec<usize> = (0..self.snapshot.sockets.len())
@@ -352,7 +467,7 @@ impl AppState {
 
     /// Move the ports-list selection, clamped to the filtered list.
     pub fn move_port_selection(&mut self, delta: i32) {
-        let count = self.port_count();
+        let count = self.port_row_count();
         if count == 0 {
             self.ports_selected = 0;
             return;
@@ -402,4 +517,72 @@ impl AppState {
             })
             .collect()
     }
+}
+
+/// One row of the grouped Ports view: a process and the sockets it owns.
+pub struct PortGroup<'a> {
+    pub key: String,
+    pub name: String,
+    pub pid: Option<i32>,
+    pub sockets: Vec<&'a ListeningSocket>,
+    pub cwd: Option<String>,
+    pub all_ifaces: usize,
+    pub iface: usize,
+    pub localhost: usize,
+}
+
+impl PortGroup<'_> {
+    pub fn count(&self) -> usize {
+        self.sockets.len()
+    }
+
+    pub fn label(&self) -> String {
+        match self.pid {
+            Some(_) if self.count() > 1 => format!("{} ×{}", self.name, self.count()),
+            Some(_) => self.name.clone(),
+            None => format!("unowned ×{}", self.count()),
+        }
+    }
+
+    pub fn ports(&self, max: usize) -> String {
+        let mut ports: Vec<u16> = self.sockets.iter().map(|s| s.port).collect();
+        ports.sort_unstable();
+        ports.dedup();
+        let joined = ports
+            .iter()
+            .map(|p| p.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        truncate(&joined, max)
+    }
+
+    pub fn scopes(&self) -> String {
+        // Dominant exposure wins; the per-socket detail is in the expanded rows.
+        if self.all_ifaces > 0 {
+            "all ifaces".to_string()
+        } else if self.iface > 0 {
+            "interface".to_string()
+        } else {
+            "localhost".to_string()
+        }
+    }
+
+    pub fn pids(&self) -> Vec<i32> {
+        let mut pids: Vec<i32> = self.sockets.iter().filter_map(|s| s.pid).collect();
+        pids.sort_unstable();
+        pids.dedup();
+        pids
+    }
+}
+
+fn truncate(s: &str, n: usize) -> String {
+    if s.chars().count() <= n {
+        return s.to_string();
+    }
+    if n <= 1 {
+        return "…".to_string();
+    }
+    let mut out: String = s.chars().take(n - 1).collect();
+    out.push('…');
+    out
 }

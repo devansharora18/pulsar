@@ -94,6 +94,13 @@ are not split across processes); the Power view reconciles the two explicitly.
 
 Every privileged action is confirmed first and logged in the activity drawer.
 
+## Design
+
+One semantic palette per theme: a single blue accent, and `ok`/`warn`/`crit` used only for
+thresholds (<60%, <85%, ≥85%). Charts are hand-built: eighth-block bars (`▏▎▍▌▋▊▉█`),
+`▁▂▃▄▅▆▇█` sparklines, and braille area graphs with a vertical gradient. Rounded borders,
+one base background everywhere, and one cell of padding inside panels.
+
 ## Requirements
 
 - Linux with `/proc` and cgroup v2 (any modern distro).

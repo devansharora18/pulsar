@@ -1,46 +1,46 @@
- PULSAR   20.9 GB used (68.2%)  ·  8.0 GB cache reclaimable  ·  9.8 GB available  ·  cpu 7.9%  ·  7.3 W model  ·  577 procs
- AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Tokyo Night
+ PULSAR  │ cpu 32.9% │ mem 22.5 GB │ ⚡  40.2 W │ 606 procs                                                                            AMD Ryzen AI 7 350 w/ Radeon 860M
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
- listening:99  exposed:36  unowned:27   j/k move  g/G top/bottom  x kill owner
-╭ Open ports (TCP listen / UDP bound) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│Proto  Local address                State    Process                      PID Scope        Working dir                                                                │
-│tcp    0.0.0.0:22                   LISTEN   —                              — all ifaces   —                                                                          │
-│tcp6   [::]:22                      LISTEN   —                              — all ifaces   —                                                                          │
-│tcp    127.0.0.53:53                LISTEN   —                              — interface    —                                                                          │
-│tcp    127.0.0.54:53                LISTEN   —                              — interface    —                                                                          │
-│udp    127.0.0.53:53                UNCONN   —                              — interface    —                                                                          │
-│udp    127.0.0.54:53                UNCONN   —                              — interface    —                                                                          │
-│udp    127.0.0.1:323                UNCONN   —                              — localhost    —                                                                          │
-│udp6   [::1]:323                    UNCONN   —                              — localhost    —                                                                          │
-│tcp    100.66.79.100:443            LISTEN   —                              — interface    —                                                                          │
-│tcp6   [fd7a:115c:a1e0::d401:4fc4]: LISTEN   —                              — interface    —                                                                          │
-│tcp    127.0.0.1:631                LISTEN   —                              — localhost    —                                                                          │
-│tcp6   [::1]:631                    LISTEN   —                              — localhost    —                                                                          │
-│tcp6   [::]:1716                    LISTEN   kdeconnectd                 4663 all ifaces   /home/devansharora18                                                       │
-│udp6   [::]:1716                    UNCONN   kdeconnectd                 4663 all ifaces   /home/devansharora18                                                       │
-│udp    100.66.79.100:3702           UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    172.16.206.26:3702           UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    172.17.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    172.18.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    172.19.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    172.20.0.1:3702              UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp    239.255.255.250:3702         UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp6   [fe80::2b22:4eb5:9e60:e729]: UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp6   [fe80::5641:4d9a:e022:801b]: UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp6   [fe80::fce6:49ff:fe53:49b1]: UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp6   [ff02::c]:3702               UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp6   [ff02::c]:3702               UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│udp6   [ff02::c]:3702               UNCONN   wsdd                       13420 interface    /home/devansharora18                                                       │
-│tcp    127.0.0.1:4173               LISTEN   node                      631647 localhost    /home/devansharora18/Documents/GitHub/times…                               │
-│tcp    127.0.0.1:5037               LISTEN   adb                       404727 localhost    /home/devansharora18                                                       │
-│tcp6   [::1]:5173                   LISTEN   node                      645602 localhost    /home/devansharora18/Documents/GitHub/portf…                               │
-│tcp    100.66.79.100:5252           LISTEN   —                              — interface    —                                                                          │
-│tcp6   [fd7a:115c:a1e0::d401:4fc4]: LISTEN   —                              — interface    —                                                                          │
-│udp    0.0.0.0:5353                 UNCONN   adb                       404727 all ifaces   /home/devansharora18                                                       │
+listening 99  exposed 37  unowned 27   grouped  j/k move  enter expand  u group  x kill
+╭ Open ports (grouped by process) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Process                            Ports / state                      Scope                PID Working dir                                                           │
+│ unowned ×27                        22, 53, 323, 443, 631, 5252…       all ifaces             — —                                                                     │
+│ wsdd ×27                           3702, 32928, 33786, 45336, …       all ifaces         13420 /home/devansharora18                                                  │
+│ qemu-system-x86 ×9                 5554, 5555, 8554, 33077, 34…       interface         557485 /home/devansharora18                                                  │
+│ netsimd ×8                         6402, 7681, 34551, 40479, 5…       all ifaces        557598 /home/devansharora18                                                  │
+│ adb ×5                             5037, 5353, 58309                  all ifaces        404727 /home/devansharora18                                                  │
+│ cloudflared ×5                     20241, 33318, 33945, 34461,…       all ifaces          4106 /home/devansharora18                                                  │
+│ stremio-runtime ×5                 5353, 11470, 12470, 37197, …       all ifaces          6668 /home/devansharora18                                                  │
+│ java ×3                            35893, 44077, 60971                all ifaces        772637 /home/devansharora18/.gradle/daemo                                    │
+│ chrome ×2                          5353                               interface         321030 /home/devansharora18                                                  │
+│ kdeconnectd ×2                     1716                               all ifaces          4663 /home/devansharora18                                                  │
+│ github-desktop                     37277                              localhost         197189 /home/devansharora18                                                  │
+│ java                               17777                              interface         773006 /home/devansharora18/.local/share/                                    │
+│ node                               5173                               localhost         645602 /home/devansharora18/Documents/Git                                    │
+│ opencode                           49374                              localhost          58627 /home/devansharora18                                                  │
+│ opencode                           62101                              localhost         643635 /home/devansharora18/Documents/Git                                    │
+│ pasta.avx2                         8787                               localhost           1664 /                                                                     │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- 1-5 view  / search  j/k move  enter expand  g/f/t view  x kill  s settings  ? help  q quit
+1-5 views  / search  j/k move  enter expand  x kill  ? help  q quit
