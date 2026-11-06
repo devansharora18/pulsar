@@ -1,45 +1,45 @@
- PULSAR   15.7 GB used (51.1%)  ·  14.3 GB cache reclaimable  ·  15.0 GB available  ·  cpu 6.1%  ·  7.3 W model  ·  559 procs
+ PULSAR   23.3 GB used (76.1%)  ·  6.9 GB cache reclaimable  ·  7.3 GB available  ·  cpu 12.0%  ·  9.3 W model  ·  567 procs
  AMD Ryzen AI 7 350 w/ Radeon 860M · 16 cpu · Catppuccin Mocha
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
- view:group  sort:Memory ▼  groups:414
+ view:group  sort:Memory ▼  groups:425
 ╭ Processes ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │Name                                                                                                              N        CPU      Memory     Disk IO     Power   PID│
-│▍ Zen Browser                                                                                                      41    23.0%      6.3 GB     50.2 GB    326 mW 10560│
-│   ╰─ bwrap  [PSS]                                                                                                        0.0%      152 KB      512 KB      0 mW 10560│
-│   ╰─ bwrap  [PSS]                                                                                                        0.0%      167 KB         0 B      0 mW 10580│
-│   ╰─ xdg-dbus-proxy  [PSS]                                                                                               0.0%      593 KB         0 B      0 mW 10582│
-│   ╰─ bwrap  [PSS]                                                                                                        0.0%      232 KB      156 KB      0 mW 10587│
-│   ╰─ zen  [PSS]                                                                                                          5.8%      869 MB     50.1 GB     82 mW 10590│
-│   ╰─ forkserver  [PSS]                                                                                                   0.0%      9.6 MB     52.1 MB      0 mW 10710│
-│   ╰─ Socket Process  [PSS]                                                                                               0.0%      5.6 MB     1004 KB      0 mW 10714│
-│   ╰─ WebExtensions  [PSS]                                                                                                0.0%      110 MB      3.5 MB      0 mW 10723│
-│   ╰─ RDD Process  [PSS]                                                                                                  0.0%     48.8 MB     40.4 MB      0 mW 10731│
-│   ╰─ Web Content  [PSS]                                                                                                  0.0%     13.6 MB         0 B      0 mW 10823│
-│   ╰─ Privileged Cont  [PSS]                                                                                              0.0%     48.5 MB      2.8 MB      0 mW 10860│
-│   ╰─ Utility Process  [PSS]                                                                                              0.0%     10.1 MB     48.0 KB      0 mW 10938│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      395 MB      244 KB      0 mW 10945│
-│   ╰─ Isolated Servic  [PSS]                                                                                              0.0%     38.4 MB      6.5 MB      0 mW 19626│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      640 MB      7.2 MB      0 mW 19689│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      115 MB         0 B      0 mW 19804│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      204 MB         0 B      0 mW 20172│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     25.9 MB      1.2 MB      0 mW 21478│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      203 MB      2.3 MB      0 mW 23591│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      393 MB         0 B      0 mW 23859│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     18.6 MB         0 B      0 mW 24001│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     30.7 MB         0 B      0 mW 30148│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      370 MB         0 B      0 mW 30289│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      430 MB      3.0 MB      0 mW 30366│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      279 MB         0 B      0 mW 32238│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      188 MB         0 B      0 mW 32552│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     27.9 MB         0 B      0 mW 33008│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              5.8%      189 MB         0 B     82 mW 38178│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      432 MB      9.3 MB      0 mW 38235│
-│   ╰─ Isolated Servic  [PSS]                                                                                              0.0%     18.5 MB         0 B      0 mW 88177│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     47.8 MB      1.4 MB      0 mW 12823│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      316 MB         0 B      0 mW 12857│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     37.7 MB      208 KB      0 mW 12880│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%     78.0 MB      2.7 MB      0 mW 13066│
-│   ╰─ Isolated Web Co  [PSS]                                                                                              0.0%      141 MB         0 B      0 mW 14248│
+│▍ java                                                                                                              3     0.0%      5.8 GB     11.9 GB      0 mW 30532│
+│   ╰─ java  [PSS]                                                                                                         0.0%      2.5 GB      9.7 GB      0 mW 53053│
+│   ╰─ java  [PSS]                                                                                                         0.0%      2.9 GB      1.7 GB      0 mW 53092│
+│   ╰─ java  [PSS]                                                                                                         0.0%      361 MB      432 MB      0 mW 56777│
+│  qemu-system-x86_64                                                                                                1     9.9%      2.9 GB     21.3 GB    156 mW 57485│
+│   ╰─ qemu-system-x86  [PSS]                                                                                              9.9%      2.9 GB     21.3 GB    156 mW 55748│
+│▍ Zen Browser                                                                                                      33     0.0%      2.4 GB     10.2 GB      0 mW 07272│
+│▍ google\x2dchrome                                                                                                 19   134.0%      1.4 GB      880 MB     2.1 W 21131│
+│▍ opencode                                                                                                          7    14.9%      1.4 GB     14.2 GB    234 mW 58627│
+│▍ python3.12                                                                                                        6     0.0%      285 MB      8.9 MB      0 mW 89443│
+│▍ GitHub Desktop                                                                                                   15     0.0%      242 MB      1.6 GB      0 mW 97021│
+│▍ Chrome                                                                                                            5     5.0%      239 MB      3.4 GB     78 mW 21030│
+│▍ python3.14                                                                                                        3     0.0%      225 MB      1.8 GB      0 mW  1266│
+│  gnome-shell                                                                                                       1     5.0%      183 MB      1.2 GB     78 mW  4452│
+│  systemd-journal                                                                                                   1     0.0%      183 MB         0 B      0 mW   645│
+│  Files                                                                                                             1     0.0%      145 MB      160 MB      0 mW 52406│
+│▍ pipewire                                                                                                          2     5.0%     84.1 MB     23.6 MB     78 mW  4446│
+│  node-22                                                                                                           1     0.0%     63.5 MB         0 B      0 mW 31647│
+│▍ abrt-dump-journ                                                                                                   3     0.0%     55.8 MB         0 B      0 mW  1067│
+│  Software                                                                                                          1     0.0%     54.3 MB      576 MB      0 mW  5874│
+│  Terminal                                                                                                          1     5.0%     52.1 MB     85.5 MB     78 mW 14338│
+│▍ systemd                                                                                                           3     0.0%     40.6 MB         0 B      0 mW     1│
+│  tailscaled                                                                                                        1     0.0%     34.8 MB         0 B      0 mW  1075│
+│  localsearch-3                                                                                                     1     0.0%     31.6 MB      2.1 GB      0 mW  5882│
+│  cloudflared                                                                                                       1     0.0%     28.6 MB      107 MB      0 mW  4106│
+│  dockerd                                                                                                           1     0.0%     24.9 MB         0 B      0 mW  1380│
+│▍ Stremio Service                                                                                                   7     0.0%     22.8 MB      225 MB      0 mW  4672│
+│  ollama                                                                                                            1     0.0%     21.8 MB         0 B      0 mW  1102│
+│▍ systemd-userwor                                                                                                   3     0.0%     20.3 MB         0 B      0 mW 42450│
+│  fwupd                                                                                                             1     0.0%     18.6 MB         0 B      0 mW  6737│
+│  containerd                                                                                                        1     0.0%     18.0 MB         0 B      0 mW  1106│
+│  NetworkManager                                                                                                    1     0.0%     17.1 MB         0 B      0 mW   913│
+│  firewalld                                                                                                         1     0.0%     16.7 MB         0 B      0 mW   912│
+│▍ pulsar                                                                                                            2    24.8%     16.5 MB      3.8 MB    389 mW 39262│
+│  tuned                                                                                                             1     0.0%     16.0 MB         0 B      0 mW  1078│
+│  gnome\x2dwifi\x2dpanel                                                                                            1     0.0%     15.7 MB     26.2 MB      0 mW 18547│
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  select a group (j/k) for actions
 

@@ -983,24 +983,11 @@ fn draw_treemap(f: &mut Frame, state: &AppState, area: Rect) {
 
 fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
-    let q = state.search.trim().to_lowercase();
-
     let mut rows_data: Vec<&pulsar_core::sockets::ListeningSocket> = state
         .snapshot
         .sockets
         .iter()
-        .filter(|s| {
-            if q.is_empty() {
-                return true;
-            }
-            s.proto.to_lowercase().contains(&q)
-                || s.addr.to_lowercase().contains(&q)
-                || s.port.to_string().contains(&q)
-                || s.comm
-                    .as_deref()
-                    .map(|c| c.to_lowercase().contains(&q))
-                    .unwrap_or(false)
-        })
+        .filter(|s| state.port_matches(s))
         .collect();
     rows_data.sort_by_key(|s| s.port);
 
@@ -1029,6 +1016,10 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
             Style::default().fg(p.fg).add_modifier(Modifier::BOLD),
         ));
     }
+    tool.push(Span::styled("   j/k", Style::default().fg(p.accent)));
+    tool.push(Span::styled(" move  ", Style::default().fg(p.dim)));
+    tool.push(Span::styled("g/G", Style::default().fg(p.accent)));
+    tool.push(Span::styled(" top/bottom", Style::default().fg(p.dim)));
     f.render_widget(Paragraph::new(Line::from(tool)), chunks[0]);
 
     let header = Row::new(vec![
@@ -1114,8 +1105,18 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
         ],
     )
     .header(header)
-    .block(panel(state, "Open ports (TCP listen / UDP bound)"));
-    f.render_widget(table, chunks[1]);
+    .block(panel(state, "Open ports (TCP listen / UDP bound)"))
+    .row_highlight_style(
+        Style::default()
+            .bg(p.accent)
+            .fg(p.bg)
+            .add_modifier(Modifier::BOLD),
+    );
+    let mut ts = TableState::default();
+    ts.select(Some(
+        state.ports_selected.min(rows_data.len().saturating_sub(1)),
+    ));
+    f.render_stateful_widget(table, chunks[1], &mut ts);
 }
 
 // ── power ────────────────────────────────────────────────────────────────────

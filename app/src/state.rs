@@ -9,6 +9,7 @@ use pulsar_core::actions::ActionResult;
 use pulsar_core::config::Config;
 use pulsar_core::group::Group;
 use pulsar_core::snapshot::SystemSnapshot;
+use pulsar_core::sockets::ListeningSocket;
 use pulsar_core::theme::Theme;
 
 use crate::theme_map::Palette;
@@ -144,6 +145,7 @@ pub struct AppState {
     pub pinned: Vec<String>,
     pub hide_kernel: bool,
     pub selected: Option<String>,
+    pub ports_selected: usize,
     pub activity: Vec<ActionResult>,
     pub confirm: Option<Pending>,
     pub overlay: Option<Overlay>,
@@ -180,6 +182,7 @@ impl AppState {
             pinned: Vec::new(),
             hide_kernel,
             selected: None,
+            ports_selected: 0,
             activity: Vec::new(),
             confirm: None,
             overlay: None,
@@ -305,6 +308,44 @@ impl AppState {
             SortKey::Pid => ga.pids.first().cmp(&gb.pids.first()),
         };
         ord.then_with(|| a.cmp(b))
+    }
+
+    /// True if a socket row matches the current search filter.
+    pub fn port_matches(&self, s: &ListeningSocket) -> bool {
+        let q = self.search.trim().to_lowercase();
+        if q.is_empty() {
+            return true;
+        }
+        s.proto.to_lowercase().contains(&q)
+            || s.addr.to_lowercase().contains(&q)
+            || s.port.to_string().contains(&q)
+            || s.comm
+                .as_deref()
+                .map(|c| c.to_lowercase().contains(&q))
+                .unwrap_or(false)
+            || s.cwd
+                .as_deref()
+                .map(|c| c.to_lowercase().contains(&q))
+                .unwrap_or(false)
+    }
+
+    pub fn port_count(&self) -> usize {
+        self.snapshot
+            .sockets
+            .iter()
+            .filter(|s| self.port_matches(s))
+            .count()
+    }
+
+    /// Move the ports-list selection, clamped to the filtered list.
+    pub fn move_port_selection(&mut self, delta: i32) {
+        let count = self.port_count();
+        if count == 0 {
+            self.ports_selected = 0;
+            return;
+        }
+        let cur = self.ports_selected.min(count - 1) as i32;
+        self.ports_selected = (cur + delta).rem_euclid(count as i32) as usize;
     }
 
     pub fn passes_filter(&self, g: &Group, snapshot: &SystemSnapshot) -> bool {

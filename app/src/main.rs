@@ -158,6 +158,30 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
         return;
     }
 
+    // The Ports view has its own row selection; arrows/j/k must not move the group selection.
+    if state.view == View::Ports {
+        match k.code {
+            KeyCode::Char('j') | KeyCode::Down => {
+                state.move_port_selection(1);
+                return;
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                state.move_port_selection(-1);
+                return;
+            }
+            KeyCode::Char('g') => {
+                state.ports_selected = 0;
+                return;
+            }
+            KeyCode::Char('G') => {
+                let count = state.port_count();
+                state.ports_selected = count.saturating_sub(1);
+                return;
+            }
+            _ => {}
+        }
+    }
+
     match k.code {
         KeyCode::Char('q') => state.should_quit = true,
         KeyCode::Char('c') if k.modifiers.contains(KeyModifiers::CONTROL) => {
