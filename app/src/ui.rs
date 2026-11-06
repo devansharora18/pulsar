@@ -64,15 +64,21 @@ fn draw_header(f: &mut Frame, state: &AppState, area: Rect) {
         sep(),
         Span::styled("cpu ", Style::default().fg(p.dim)),
         Span::styled(
-            format!("{:.1}%", s.cpu.overall_usage_pct),
+            format!("{:.1}", s.cpu.overall_usage_pct),
             Style::default().fg(p.text),
         ),
+        Span::styled("%", Style::default().fg(p.dim)),
         sep(),
         Span::styled("mem ", Style::default().fg(p.dim)),
-        Span::styled(human_kb(mem.used_real), Style::default().fg(p.text)),
+        Span::styled(
+            format!("{:.1}", mem.used_real as f64 / 1024.0 / 1024.0),
+            Style::default().fg(p.text),
+        ),
+        Span::styled(" GB", Style::default().fg(p.dim)),
         sep(),
         Span::styled("⚡ ", Style::default().fg(p.dim)),
-        Span::styled(human_watts(power.total_w), Style::default().fg(p.text)),
+        Span::styled(format!("{:.1}", power.total_w), Style::default().fg(p.text)),
+        Span::styled(" W", Style::default().fg(p.dim)),
         sep(),
         Span::styled(
             format!("{} procs", s.proc_count),
@@ -210,6 +216,26 @@ fn draw_overview(f: &mut Frame, state: &AppState, area: Rect) {
     draw_disk(f, state, right[2]);
 }
 
+/// Split "18.4 GB" / "12.3%" into a bright value and a dim unit.
+fn val_spans(s: impl Into<String>, p: &crate::theme_map::Palette) -> Vec<Span<'static>> {
+    let s = s.into();
+    if let Some((v, u)) = s.rsplit_once(' ') {
+        if !u.is_empty() {
+            return vec![
+                Span::styled(v.to_string(), Style::default().fg(p.text)),
+                Span::styled(format!(" {u}"), Style::default().fg(p.dim)),
+            ];
+        }
+    }
+    if let Some(v) = s.strip_suffix('%') {
+        return vec![
+            Span::styled(v.to_string(), Style::default().fg(p.text)),
+            Span::styled("%", Style::default().fg(p.dim)),
+        ];
+    }
+    vec![Span::styled(s, Style::default().fg(p.text))]
+}
+
 fn draw_resources(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
     let s = &state.snapshot;
@@ -264,9 +290,10 @@ fn draw_resources(f: &mut Frame, state: &AppState, area: Rect) {
             Span::styled(" ", Style::default()),
         ];
         spans.extend(bar_spans(*frac, bar_w, p.threshold(*frac), p.surface));
-        spans.push(Span::styled(
-            format!(" {value:>width$}", width = value_w as usize),
-            Style::default().fg(p.text),
+        spans.push(Span::styled(" ", Style::default()));
+        spans.extend(val_spans(
+            format!("{value:>width$}", width = value_w as usize - 1),
+            &p,
         ));
         f.render_widget(
             Paragraph::new(Line::from(spans)).style(Style::default().bg(p.base)),
@@ -377,13 +404,14 @@ fn draw_top_mem(f: &mut Frame, state: &AppState, area: Rect) {
             Span::styled(" ", Style::default()),
         ];
         spans.extend(bar_spans(frac, bar_w, p.accent, p.surface));
-        spans.push(Span::styled(
+        spans.push(Span::styled(" ", Style::default()));
+        spans.extend(val_spans(
             format!(
-                " {:>width$}",
+                "{:>width$}",
                 human_bytes(g.pss as f64 * 1024.0),
-                width = value_w as usize
+                width = value_w as usize - 1
             ),
-            Style::default().fg(p.text),
+            &p,
         ));
         lines.push(Line::from(spans));
     }
@@ -612,13 +640,8 @@ fn mem_cell(kb: u64, max_kb: u64, p: &crate::theme_map::Palette) -> Cell<'static
     } else {
         0.0
     };
-    let mut spans = vec![
-        Span::styled(
-            format!("{:>6}", human_bytes(kb as f64 * 1024.0)),
-            Style::default().fg(p.text),
-        ),
-        Span::styled(" ", Style::default()),
-    ];
+    let mut spans = val_spans(format!("{:>6}", human_bytes(kb as f64 * 1024.0)), p);
+    spans.push(Span::styled(" ", Style::default()));
     spans.extend(bar_spans(frac, 5, p.accent, p.base));
     Cell::from(Line::from(spans).alignment(Alignment::Right))
 }
@@ -644,13 +667,7 @@ fn power_cell(watts: f64, p: &crate::theme_map::Palette) -> Cell<'static> {
             Line::from(Span::styled("·", Style::default().fg(p.dim))).alignment(Alignment::Right),
         );
     }
-    Cell::from(
-        Line::from(Span::styled(
-            human_watts(watts),
-            Style::default().fg(p.text),
-        ))
-        .alignment(Alignment::Right),
-    )
+    Cell::from(Line::from(val_spans(human_watts(watts), p)).alignment(Alignment::Right))
 }
 
 fn draw_process_table(f: &mut Frame, state: &mut AppState, area: Rect) -> Option<usize> {

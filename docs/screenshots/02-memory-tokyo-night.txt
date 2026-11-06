@@ -1,36 +1,37 @@
- PULSAR  │ cpu 32.9% │ mem 22.5 GB │ ⚡  40.2 W │ 606 procs                                                                            AMD Ryzen AI 7 350 w/ Radeon 860M
+ PULSAR  │ cpu 98.9% │ mem 24.8 GB │ ⚡  36.4 W │ 605 procs                                                                            AMD Ryzen AI 7 350 w/ Radeon 860M
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
 ╭ Memory ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│  used 70%                                                                                                               cache 24%                                    │
+│  used 77%                                                                                                                           cache 20%                        │
 │                                                                                                                                                                      │
-│  22.5 GB really used  ·  7.5 GB cache you can reclaim  ·  8.1 GB available                                                                                           │
+│  24.8 GB really used  ·  6.0 GB cache you can reclaim  ·  5.8 GB available                                                                                           │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭ Really used ──────────────────────────────────────────╮╭ Reclaimable ─────────────────────────────────────────╮╭ Kernel + unattributed ──────────────────────────────╮
-│ 22.5 GB                                               ││ 7.5 GB                                               ││ 7.1 GB                                              │
-│ 73.5% of total · PSI 0.0                              ││ page cache + buffers + slab · shared 158 MB          ││ kernel 1.1 GB · unattributed 6.0 GB · Σ PSS 15.4 GB │
+│ 24.8 GB                                               ││ 6.0 GB                                               ││ 7.1 GB                                              │
+│ 80.9% of total · PSI 0.0                              ││ page cache + buffers + slab · shared 166 MB          ││ kernel 1.1 GB · unattributed 6.0 GB · Σ PSS 17.7 GB │
 │                                                       ││                                                      ││                                                     │
 ╰───────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
 ╭ Memory treemap by app (PSS) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│  Zen Browser                                                                                         opencode          googl…                  VSCodium              │
-│  3.7 GB                                                                                              1.7 GB            819 MB                  388 MB                │
+│  java                                                                                                         opencode                      Chromium                 │
+│  5.2 GB                                                                                                       1.6 GB                        686 MB                   │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                GitHub Desktop        │
-│                                                                                                                                                283 MB                │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                    python3.14        │
-│                                                                                                                                                    218 MB            │
-│  java                                                                                                                                                                │
-│  3.0 GB                                                                                                                                                              │
-│                                                                                                                                                       Chrome         │
+│                                                                                                                                                 GitHub Desktop       │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                          python3.…   │
+│                                                                                                                                                     python3.14       │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│  Zen Browser                                                                                                                                                         │
+│  3.9 GB                                                                                                                                               python3.12     │
+│                                                                                                                                                                      │
+│                                                                                                                                                          dnf5daem…   │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                             syste…   │
+│                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │  qemu-system-x86_64                                                                                                                                                  │
 │  2.7 GB                                                                                                                                                              │
@@ -39,8 +40,7 @@
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 reclaim: c drop caches  C drop all  m compact  p enable power metrics
-flush swap disabled: needs ~16.2 GB free to swap back in, only 8.1 GB available  ·  power metrics need the udev rule (pkexec)
+flush swap disabled: needs ~16.3 GB free to swap back in, only 5.8 GB available  ·  power metrics need the udev rule (pkexec)
 1-5 views  / search  j/k move  enter expand  x kill  ? help  q quit
