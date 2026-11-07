@@ -268,8 +268,10 @@ impl Sampler {
         self.history
             .gpu_temp
             .push(crate::hwmon::gpu_temp_c().unwrap_or(f64::NAN));
+        // Loopback is noise for a system graph; hide it by default.
         let (rx, tx) = net
             .iter()
+            .filter(|i| i.name != "lo")
             .fold((0.0, 0.0), |(a, b), i| (a + i.rx_bps, b + i.tx_bps));
         self.history.net_rx.push(rx);
         self.history.net_tx.push(tx);

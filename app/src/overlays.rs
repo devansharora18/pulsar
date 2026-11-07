@@ -9,6 +9,11 @@ use ratatui::Frame;
 use crate::state::{AppState, Overlay, PendingKind, Setting, SETTINGS};
 
 pub fn draw(f: &mut Frame, state: &mut AppState, area: Rect) {
+    if state.confirm.is_none() && state.overlay.is_none() {
+        return;
+    }
+    // Dim whatever is on screen; popups clear their own rect so nothing bleeds through.
+    dim_backdrop(f, area, state.palette.base);
     if state.confirm.is_some() {
         draw_confirm(f, state, area);
     } else if let Some(o) = state.overlay {
@@ -16,6 +21,29 @@ pub fn draw(f: &mut Frame, state: &mut AppState, area: Rect) {
             Overlay::Help => draw_help(f, state, area),
             Overlay::Activity => draw_activity(f, state, area),
             Overlay::Settings => draw_settings(f, state, area),
+        }
+    }
+}
+
+fn dim_backdrop(f: &mut Frame, area: Rect, base: ratatui::style::Color) {
+    let buf = f.buffer_mut();
+    for y in area.top()..area.bottom() {
+        for x in area.left()..area.right() {
+            let Some(cell) = buf.cell_mut((x, y)) else {
+                continue;
+            };
+            let fg = if matches!(cell.fg, ratatui::style::Color::Rgb(..)) {
+                crate::theme_map::blend(cell.fg, base, 0.60)
+            } else {
+                base
+            };
+            let bg = if matches!(cell.bg, ratatui::style::Color::Rgb(..)) {
+                crate::theme_map::blend(cell.bg, base, 0.60)
+            } else {
+                base
+            };
+            cell.set_fg(fg);
+            cell.set_bg(bg);
         }
     }
 }
@@ -35,7 +63,7 @@ fn popup(state: &AppState, title: &str, _area: Rect) -> Block<'static> {
     let p = state.palette;
     Block::default()
         .borders(Borders::ALL)
-        .border_type(BorderType::Double)
+        .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(p.accent))
         .title(Span::styled(
             format!(" {title} "),
@@ -256,7 +284,7 @@ fn draw_settings(f: &mut Frame, state: &AppState, area: Rect) {
             )),
             Line::from(Span::styled(
                 format!("{}", pulsar_core::config::Config::config_path().display()),
-                Style::default().fg(p.border),
+                Style::default().fg(p.dim),
             )),
         ])
         .wrap(Wrap { trim: true }),

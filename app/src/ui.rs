@@ -10,8 +10,10 @@ use ratatui::Frame;
 
 use pulsar_core::group::{Group, ProcSample};
 
-use crate::format::{human_bytes, human_kb, human_rate, human_temp, human_watts, pct};
-use crate::graph::{bar_spans, braille_area};
+use crate::format::{
+    human_bytes, human_freq_mhz, human_kb, human_rate, human_temp, human_watts, pct,
+};
+use crate::graph::{bar_spans, draw_area};
 use crate::state::{AppState, Overlay, View, ViewMode};
 use crate::theme_map::blend;
 use crate::treemap::squarify;
@@ -172,27 +174,53 @@ fn draw_footer(f: &mut Frame, state: &AppState, area: Rect) {
     } else {
         let key = Style::default().fg(p.text);
         let act = Style::default().fg(p.dim);
-        let compact = area.width < 100;
-        let mut spans = vec![
-            Span::styled("1-5", key),
-            Span::styled(" views  ", act),
-            Span::styled("/", key),
-            Span::styled(" search  ", act),
-            Span::styled("j/k", key),
-            Span::styled(" move  ", act),
-        ];
-        if !compact {
-            spans.push(Span::styled("enter", key));
-            spans.push(Span::styled(" expand  ", act));
+        let pairs: Vec<(&str, &str)> = match state.view {
+            View::Overview | View::Power => vec![
+                ("1-6", " views"),
+                ("s", " settings"),
+                ("?", " help"),
+                ("q", " quit"),
+            ],
+            View::Processes => vec![
+                ("1-6", " views"),
+                ("/", " search"),
+                ("j/k", " move"),
+                ("enter", " expand"),
+                ("x", " kill"),
+                ("s", " settings"),
+                ("?", " help"),
+                ("q", " quit"),
+            ],
+            View::Memory => vec![
+                ("1-6", " views"),
+                ("c/C", " caches"),
+                ("m", " compact"),
+                ("w", " swap"),
+                ("p", " power"),
+                ("s", " settings"),
+                ("?", " help"),
+                ("q", " quit"),
+            ],
+            View::Ports => vec![
+                ("1-6", " views"),
+                ("/", " search"),
+                ("j/k", " move"),
+                ("enter", " expand"),
+                ("u", " group"),
+                ("x", " kill"),
+                ("s", " settings"),
+                ("?", " help"),
+                ("q", " quit"),
+            ],
+        };
+        let mut spans = Vec::new();
+        for (i, (k, a)) in pairs.iter().enumerate() {
+            if i > 0 {
+                spans.push(Span::styled("  ", act));
+            }
+            spans.push(Span::styled(*k, key));
+            spans.push(Span::styled(*a, act));
         }
-        spans.push(Span::styled("x", key));
-        spans.push(Span::styled(" kill  ", act));
-        spans.push(Span::styled("s / 6", key));
-        spans.push(Span::styled(" settings  ", act));
-        spans.push(Span::styled("?", key));
-        spans.push(Span::styled(" help  ", act));
-        spans.push(Span::styled("q", key));
-        spans.push(Span::styled(" quit", act));
         Line::from(spans)
     };
     f.render_widget(
@@ -358,7 +386,7 @@ fn draw_cores(f: &mut Frame, state: &AppState, area: Rect, compact: bool) {
     let cell_h = if compact { 2 } else { 3 };
     let buf = f.buffer_mut();
     let text_w = cell_w.saturating_sub(1) as usize;
-    for (i, _c) in cores.iter().enumerate() {
+    for (i, core) in cores.iter().enumerate() {
         let ema = state.core_ema.get(i).copied().unwrap_or(0.0);
         let x = inner.x + (i as u16 % cols) * cell_w;
         let y = inner.y + (i as u16 / cols) * cell_h;
@@ -366,16 +394,16 @@ fn draw_cores(f: &mut Frame, state: &AppState, area: Rect, compact: bool) {
             break;
         }
         let color = p.threshold(ema / 100.0);
-        let usage = format!("{ema:>3.0}%");
+        let usage = if text_w >= 10 {
+            match core.freq_mhz {
+                Some(f) => format!("{ema:>3.0}% {}", human_freq_mhz(f)),
+                None => format!("{ema:>3.0}%"),
+            }
+        } else {
+            format!("{ema:>3.0}%")
+        };
         buf.set_stringn(x, y, &usage, text_w, Style::default().fg(color));
-        let spark = state
-            .core_hist
-            .get(i)
-            .map(|h| crate::graph::sparkline(h, text_w, 100.0))
-            .unwrap_or_default();
-        if !spark.is_empty() {
-            buf.set_stringn(x, y + 1, &spark, text_w, Style::default().fg(color));
-        }
+        crate::graph::paint_bar(buf, x, y + 1, text_w, ema / 100.0, color, p.surface);
     }
 }
 
@@ -392,7 +420,8 @@ fn draw_sensors(f: &mut Frame, state: &AppState, area: Rect) {
             Style::default().fg(p.text),
         ),
     ])];
-    for t in s.temps.iter().take(inner.height.saturating_sub(1) as usize) {
+    let max_temps = inner.height.saturating_sub(5) as usize;
+    for t in s.temps.iter().take(max_temps.max(2)) {
         let color = if t.temp_c >= 80.0 {
             p.crit
         } else if t.temp_c >= 65.0 {
@@ -409,7 +438,55 @@ fn draw_sensors(f: &mut Frame, state: &AppState, area: Rect) {
             Span::styled(human_temp(t.temp_c), Style::default().fg(color)),
         ]));
     }
-    f.render_widget(Paragraph::new(lines), inner);
+    let used = lines.len() as u16;
+    let top = Rect {
+        x: inner.x,
+        y: inner.y,
+        width: inner.width,
+        height: used.min(inner.height),
+    };
+    f.render_widget(Paragraph::new(lines), top);
+
+    // Thermal area graph fills the rest of the panel instead of leaving dead space.
+    let last = s.series.cpu_temp.last().copied().unwrap_or(0.0);
+    let tcolor = if last >= 80.0 {
+        p.crit
+    } else if last >= 65.0 {
+        p.warn
+    } else {
+        p.ok
+    };
+    let graph_top = inner.y + used + 1;
+    if graph_top + 1 < inner.bottom() {
+        f.render_widget(
+            Paragraph::new(Line::from(Span::styled(
+                "cpu temp · last 30s",
+                Style::default().fg(p.dim),
+            ))),
+            Rect {
+                x: inner.x,
+                y: graph_top,
+                width: inner.width,
+                height: 1,
+            },
+        );
+        let graph = Rect {
+            x: inner.x,
+            y: graph_top + 1,
+            width: inner.width,
+            height: inner.bottom() - graph_top - 1,
+        };
+        draw_area(
+            f.buffer_mut(),
+            graph,
+            &s.series.cpu_temp,
+            tcolor,
+            blend(tcolor, p.base, 0.88),
+            blend(tcolor, p.text, 0.30),
+            100.0,
+            false,
+        );
+    }
 }
 
 fn draw_top_mem(f: &mut Frame, state: &AppState, area: Rect) {
@@ -440,7 +517,7 @@ fn draw_top_mem(f: &mut Frame, state: &AppState, area: Rect) {
             ),
             Span::styled(" ", Style::default()),
         ];
-        spans.extend(bar_spans(frac, bar_w, p.accent, p.surface));
+        spans.extend(bar_spans(frac, bar_w, p.accent, p.base));
         spans.push(Span::styled(" ", Style::default()));
         spans.extend(val_spans(
             format!(
@@ -458,7 +535,32 @@ fn draw_top_mem(f: &mut Frame, state: &AppState, area: Rect) {
 fn draw_network(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
     let s = &state.snapshot;
-    let block = panel(state, "Network");
+    let rxmax = s
+        .series
+        .net_rx
+        .iter()
+        .copied()
+        .fold(0.0_f64, f64::max)
+        .max(1024.0)
+        * 1.15;
+    let txmax = s
+        .series
+        .net_tx
+        .iter()
+        .copied()
+        .fold(0.0_f64, f64::max)
+        .max(1024.0)
+        * 1.15;
+    let title = if area.width >= 100 {
+        format!(
+            "Network · max ↓{} ↑{}",
+            human_rate(rxmax),
+            human_rate(txmax)
+        )
+    } else {
+        "Network".to_string()
+    };
+    let block = panel(state, &title);
     let inner = block.inner(area);
     f.render_widget(block, area);
     if inner.height < 2 {
@@ -469,7 +571,12 @@ fn draw_network(f: &mut Frame, state: &AppState, area: Rect) {
         .constraints([Constraint::Length(1), Constraint::Min(1)])
         .split(inner);
     let mut line = Vec::new();
-    for iface in s.net.iter().filter(|i| i.up || i.rx_bps > 0.0).take(2) {
+    for iface in s
+        .net
+        .iter()
+        .filter(|i| i.name != "lo" && (i.up || i.rx_bps > 0.0))
+        .take(2)
+    {
         line.push(Span::styled(
             format!("{} ", trunc(&iface.name, 12)),
             Style::default().fg(p.dim),
@@ -491,28 +598,21 @@ fn draw_network(f: &mut Frame, state: &AppState, area: Rect) {
     }
     f.render_widget(Paragraph::new(Line::from(line)), rows[0]);
 
-    let h = rows[1].height as usize;
-    let w = rows[1].width as usize;
-    let active = s.series.net_rx.iter().any(|v| *v > 0.5);
-    if h > 0 && w > 2 && active {
-        let nmax = s
-            .series
-            .net_rx
-            .iter()
-            .copied()
-            .fold(0.0_f64, f64::max)
-            .max(1024.0)
-            * 1.2;
-        let graph = crate::graph::braille_area_max(
+    let active =
+        s.series.net_rx.iter().any(|v| *v > 0.5) || s.series.net_tx.iter().any(|v| *v > 0.5);
+    if active && rows[1].height > 0 {
+        draw_mirrored(
+            f.buffer_mut(),
+            rows[1],
             &s.series.net_rx,
-            w,
-            h,
+            &s.series.net_tx,
             p.accent,
-            blend(p.accent, p.base, 0.90),
-            nmax,
+            p.ok,
+            rxmax,
+            txmax,
+            &p,
         );
-        f.render_widget(Paragraph::new(graph), rows[1]);
-    } else if h > 0 {
+    } else if rows[1].height > 0 {
         f.render_widget(
             Paragraph::new(Line::from(Span::styled("idle", Style::default().fg(p.dim)))),
             rows[1],
@@ -520,24 +620,139 @@ fn draw_network(f: &mut Frame, state: &AppState, area: Rect) {
     }
 }
 
+/// Read/write or down/up graphs sharing a baseline: first series grows up, second down.
+#[allow(clippy::too_many_arguments)]
+fn draw_mirrored(
+    buf: &mut ratatui::buffer::Buffer,
+    area: Rect,
+    up: &[f64],
+    down: &[f64],
+    up_color: Color,
+    down_color: Color,
+    up_max: f64,
+    down_max: f64,
+    p: &crate::theme_map::Palette,
+) {
+    if area.height >= 5 {
+        let half = (area.height - 1) / 2;
+        let top = Rect {
+            x: area.x,
+            y: area.y,
+            width: area.width,
+            height: half,
+        };
+        let mid_y = area.y + half;
+        let bottom = Rect {
+            x: area.x,
+            y: mid_y + 1,
+            width: area.width,
+            height: area.height - half - 1,
+        };
+        draw_area(
+            buf,
+            top,
+            up,
+            up_color,
+            blend(up_color, p.base, 0.88),
+            blend(up_color, p.text, 0.30),
+            up_max,
+            false,
+        );
+        draw_area(
+            buf,
+            bottom,
+            down,
+            down_color,
+            blend(down_color, p.base, 0.88),
+            blend(down_color, p.text, 0.30),
+            down_max,
+            true,
+        );
+        for x in 0..area.width {
+            if let Some(cell) = buf.cell_mut((area.x + x, mid_y)) {
+                cell.set_symbol("─");
+                cell.set_fg(p.border);
+                cell.set_bg(p.base);
+            }
+        }
+    } else {
+        draw_area(
+            buf,
+            area,
+            up,
+            up_color,
+            blend(up_color, p.base, 0.88),
+            blend(up_color, p.text, 0.30),
+            up_max,
+            false,
+        );
+    }
+}
+
+/// Whole disks only: drop partitions such as `nvme0n1p3` or `sda1`.
+fn parent_disks(disks: &[pulsar_core::disk::DiskStat]) -> Vec<&pulsar_core::disk::DiskStat> {
+    let names: std::collections::HashSet<&str> = disks.iter().map(|d| d.name.as_str()).collect();
+    disks
+        .iter()
+        .filter(|d| {
+            let n = d.name.as_str();
+            if let Some(pos) = n.rfind('p') {
+                let tail = &n[pos + 1..];
+                if !tail.is_empty()
+                    && tail.chars().all(|c| c.is_ascii_digit())
+                    && names.contains(&n[..pos])
+                {
+                    return false;
+                }
+            }
+            if let Some(pos) = n.rfind(|c: char| !c.is_ascii_digit()) {
+                let start = pos + 1;
+                if start < n.len()
+                    && n[start..].chars().all(|c| c.is_ascii_digit())
+                    && names.contains(&n[..start])
+                {
+                    return false;
+                }
+            }
+            true
+        })
+        .collect()
+}
+
 fn draw_disk(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
     let s = &state.snapshot;
-    let block = panel(state, "Disk");
+    let all = parent_disks(&s.disks);
+    let mut disks: Vec<&pulsar_core::disk::DiskStat> = all
+        .iter()
+        .copied()
+        .filter(|d| d.read_bps > 0.0 || d.write_bps > 0.0)
+        .collect();
+    let active = !disks.is_empty() || s.series.disk_read.iter().any(|v| *v > 0.5);
+    let rmax = s
+        .series
+        .disk_read
+        .iter()
+        .copied()
+        .fold(0.0_f64, f64::max)
+        .max(1024.0)
+        * 1.15;
+    let wmax = s
+        .series
+        .disk_write
+        .iter()
+        .copied()
+        .fold(0.0_f64, f64::max)
+        .max(1024.0)
+        * 1.15;
+    let title = if area.width >= 100 {
+        format!("Disk · max r{} w{}", human_rate(rmax), human_rate(wmax))
+    } else {
+        "Disk".to_string()
+    };
+    let block = panel(state, &title);
     let inner = block.inner(area);
     f.render_widget(block, area);
-    if inner.height == 0 {
-        return;
-    }
-    let graph_h = if inner.height >= 8 { 4 } else { 0 } as u16;
-    let list_h = inner
-        .height
-        .saturating_sub(graph_h + u16::from(graph_h > 0));
-    let active = s
-        .disks
-        .iter()
-        .any(|d| d.read_bps > 0.0 || d.write_bps > 0.0)
-        || s.series.disk_read.iter().any(|v| *v > 0.5);
     if !active {
         f.render_widget(
             Paragraph::new(Line::from(Span::styled("idle", Style::default().fg(p.dim)))),
@@ -545,13 +760,18 @@ fn draw_disk(f: &mut Frame, state: &AppState, area: Rect) {
         );
         return;
     }
-    let mut disks: Vec<&pulsar_core::disk::DiskStat> = s
-        .disks
-        .iter()
-        .filter(|d| d.read_bps > 0.0 || d.write_bps > 0.0)
-        .collect();
     disks.sort_by_key(|d| std::cmp::Reverse(d.read_bps as u64 + d.write_bps as u64));
 
+    let graph_h = if inner.height >= 12 {
+        6
+    } else if inner.height >= 8 {
+        4
+    } else {
+        0
+    };
+    let list_h = inner
+        .height
+        .saturating_sub(graph_h + u16::from(graph_h > 0));
     let mut lines = Vec::new();
     for d in disks.iter().take(list_h as usize) {
         lines.push(Line::from(vec![
@@ -584,14 +804,17 @@ fn draw_disk(f: &mut Frame, state: &AppState, area: Rect) {
             width: inner.width,
             height: graph_h,
         };
-        let graph = braille_area(
+        draw_mirrored(
+            f.buffer_mut(),
+            graph_area,
             &s.series.disk_read,
-            graph_area.width as usize,
-            graph_area.height as usize,
+            &s.series.disk_write,
             p.accent,
-            blend(p.accent, p.base, 0.90),
+            p.ok,
+            rmax,
+            wmax,
+            &p,
         );
-        f.render_widget(Paragraph::new(graph), graph_area);
     }
 }
 
@@ -604,7 +827,7 @@ fn draw_processes(f: &mut Frame, state: &mut AppState, area: Rect) {
         .constraints([
             Constraint::Length(1), // toolbar
             Constraint::Min(6),    // table
-            Constraint::Length(2), // selection/action bar
+            Constraint::Length(1), // selection/action bar
         ])
         .split(area);
 
@@ -652,34 +875,37 @@ fn draw_processes(f: &mut Frame, state: &mut AppState, area: Rect) {
 }
 
 fn cpu_cell(value: f64, p: &crate::theme_map::Palette) -> Cell<'static> {
-    if value < 0.05 {
-        return Cell::from(
-            Line::from(Span::styled("·", Style::default().fg(p.dim))).alignment(Alignment::Right),
-        );
-    }
     let frac = (value / 100.0).clamp(0.0, 1.0);
-    let mut spans = vec![
-        Span::styled(format!("{value:>3.0}%"), Style::default().fg(p.text)),
-        Span::styled(" ", Style::default()),
-    ];
-    spans.extend(bar_spans(frac, 5, p.threshold(frac), p.base));
+    let style = if value < 0.05 {
+        Style::default().fg(p.dim)
+    } else {
+        Style::default().fg(p.text)
+    };
+    let mut spans = bar_spans(frac, 5, p.threshold(frac), p.base);
+    spans.push(Span::styled(" ", Style::default()));
+    spans.push(Span::styled(format!("{value:>3.0}%"), style));
     Cell::from(Line::from(spans).alignment(Alignment::Right))
 }
 
-fn mem_cell(kb: u64, max_kb: u64, p: &crate::theme_map::Palette) -> Cell<'static> {
-    if kb == 0 {
-        return Cell::from(
-            Line::from(Span::styled("·", Style::default().fg(p.dim))).alignment(Alignment::Right),
-        );
-    }
+fn mem_cell(kb: u64, max_kb: u64, bar_w: usize, p: &crate::theme_map::Palette) -> Cell<'static> {
     let frac = if max_kb > 0 {
         (kb as f64 / max_kb as f64).clamp(0.0, 1.0)
     } else {
         0.0
     };
-    let mut spans = val_spans(format!("{:>6}", human_bytes(kb as f64 * 1024.0)), p);
+    let mut spans = bar_spans(frac, bar_w, p.accent, p.base);
     spans.push(Span::styled(" ", Style::default()));
-    spans.extend(bar_spans(frac, 5, p.accent, p.base));
+    if kb == 0 {
+        spans.push(Span::styled(
+            format!("{:>7}", "·"),
+            Style::default().fg(p.dim),
+        ));
+    } else {
+        spans.extend(val_spans(
+            format!("{:>7}", human_bytes(kb as f64 * 1024.0)),
+            p,
+        ));
+    }
     Cell::from(Line::from(spans).alignment(Alignment::Right))
 }
 
@@ -731,6 +957,15 @@ fn draw_process_table(f: &mut Frame, state: &mut AppState, area: Rect) -> Option
         (groups, child_map, max_pss)
     };
 
+    let narrow = area.width < 100;
+    let wide = area.width >= 120;
+    let spark_max = visible
+        .iter()
+        .map(|g| g.spark.iter().copied().fold(0.0_f64, f64::max))
+        .fold(0.0_f64, f64::max)
+        .max(0.001);
+    let mem_bar = if narrow { 10 } else { 12 };
+
     let mut rows: Vec<Row> = Vec::new();
     let mut selected_row: Option<usize> = None;
     for g in &visible {
@@ -740,7 +975,7 @@ fn draw_process_table(f: &mut Frame, state: &mut AppState, area: Rect) -> Option
         }
         let pinned = state.is_pinned(&g.key);
         let name = format!("{}{}", if pinned { "★ " } else { "" }, trunc(&g.name, 30));
-        let mut row = Row::new(vec![
+        let mut cells = vec![
             Cell::from(Line::from(name).style(Style::default().fg(p.text))),
             Cell::from(
                 Line::from(Span::styled(
@@ -754,20 +989,29 @@ fn draw_process_table(f: &mut Frame, state: &mut AppState, area: Rect) -> Option
                 .alignment(Alignment::Right),
             ),
             cpu_cell(g.cpu_pct, &p),
-            mem_cell(g.pss, max_pss, &p),
-            io_cell(g.io_read + g.io_write, &p),
-            power_cell(g.power_w, &p),
-            Cell::from(
-                Line::from(Span::styled(
-                    g.pids
-                        .first()
-                        .map(|pid| pid.to_string())
-                        .unwrap_or_default(),
-                    Style::default().fg(p.dim),
-                ))
-                .alignment(Alignment::Right),
-            ),
-        ]);
+            mem_cell(g.pss, max_pss, mem_bar, &p),
+        ];
+        if !narrow {
+            cells.push(io_cell(g.io_read + g.io_write, &p));
+        }
+        cells.push(power_cell(g.power_w, &p));
+        cells.push(Cell::from(
+            Line::from(Span::styled(
+                g.pids
+                    .first()
+                    .map(|pid| pid.to_string())
+                    .unwrap_or_default(),
+                Style::default().fg(p.dim),
+            ))
+            .alignment(Alignment::Right),
+        ));
+        if wide {
+            cells.push(Cell::from(Line::from(Span::styled(
+                crate::graph::sparkline(&g.spark, 8, spark_max),
+                Style::default().fg(p.dim),
+            ))));
+        }
+        let mut row = Row::new(cells);
         if is_sel {
             row = row.style(Style::default().bg(p.surface));
         }
@@ -783,21 +1027,27 @@ fn draw_process_table(f: &mut Frame, state: &mut AppState, area: Rect) -> Option
                     if !kid.mem.from_rollup {
                         label.push_str(" rss");
                     }
-                    rows.push(Row::new(vec![
+                    let mut cells = vec![
                         Cell::from(Line::from(label).style(Style::default().fg(p.dim))),
                         Cell::from(""),
                         cpu_cell(kid.cpu_pct, &p),
-                        mem_cell(kid.mem.pss, max_pss, &p),
-                        io_cell(kid.io.read_bytes + kid.io.write_bytes, &p),
-                        power_cell(kid.power_w, &p),
-                        Cell::from(
-                            Line::from(Span::styled(
-                                kid.pid.to_string(),
-                                Style::default().fg(p.dim),
-                            ))
-                            .alignment(Alignment::Right),
-                        ),
-                    ]));
+                        mem_cell(kid.mem.pss, max_pss, mem_bar, &p),
+                    ];
+                    if !narrow {
+                        cells.push(io_cell(kid.io.read_bytes + kid.io.write_bytes, &p));
+                    }
+                    cells.push(power_cell(kid.power_w, &p));
+                    cells.push(Cell::from(
+                        Line::from(Span::styled(
+                            kid.pid.to_string(),
+                            Style::default().fg(p.dim),
+                        ))
+                        .alignment(Alignment::Right),
+                    ));
+                    if wide {
+                        cells.push(Cell::from(""));
+                    }
+                    rows.push(Row::new(cells));
                 }
             }
         }
@@ -810,50 +1060,44 @@ fn draw_process_table(f: &mut Frame, state: &mut AppState, area: Rect) -> Option
             Style::default().fg(p.dim)
         }
     };
-    let header = Row::new(vec![
+    let num_head = |label: &'static str, style: Style| -> Cell<'static> {
+        Cell::from(Line::from(Span::styled(label, style)).alignment(Alignment::Right))
+    };
+    let mut head = vec![
         Cell::from(Span::styled("Name", sorted(crate::state::SortKey::Name))),
-        Cell::from(
-            Line::from(Span::styled("N", Style::default().fg(p.dim))).alignment(Alignment::Right),
-        ),
-        Cell::from(
-            Line::from(Span::styled("CPU", sorted(crate::state::SortKey::Cpu)))
-                .alignment(Alignment::Right),
-        ),
-        Cell::from(
-            Line::from(Span::styled("Memory", sorted(crate::state::SortKey::Pss)))
-                .alignment(Alignment::Right),
-        ),
-        Cell::from(
-            Line::from(Span::styled("Disk", sorted(crate::state::SortKey::Io)))
-                .alignment(Alignment::Right),
-        ),
-        Cell::from(
-            Line::from(Span::styled("Power", sorted(crate::state::SortKey::Power)))
-                .alignment(Alignment::Right),
-        ),
-        Cell::from(
-            Line::from(Span::styled("PID", sorted(crate::state::SortKey::Pid)))
-                .alignment(Alignment::Right),
-        ),
-    ])
-    .style(Style::default().bg(p.base));
+        num_head("N", Style::default().fg(p.dim)),
+        num_head("CPU", sorted(crate::state::SortKey::Cpu)),
+        num_head("Memory", sorted(crate::state::SortKey::Pss)),
+    ];
+    if !narrow {
+        head.push(num_head("Disk", sorted(crate::state::SortKey::Io)));
+    }
+    head.push(num_head("Power", sorted(crate::state::SortKey::Power)));
+    head.push(num_head("PID", sorted(crate::state::SortKey::Pid)));
+    if wide {
+        head.push(num_head("PWR 30s", Style::default().fg(p.dim)));
+    }
+    let header = Row::new(head).style(Style::default().bg(p.base));
 
-    let table = Table::new(
-        rows,
-        [
-            Constraint::Percentage(20),
-            Constraint::Length(3),
-            Constraint::Length(11),
-            Constraint::Length(12),
-            Constraint::Length(8),
-            Constraint::Length(7),
-            Constraint::Length(6),
-            Constraint::Min(0),
-        ],
-    )
-    .header(header)
-    .block(panel(state, "Processes"))
-    .row_highlight_style(Style::default().bg(p.surface));
+    let mut widths = vec![
+        Constraint::Min(12),
+        Constraint::Length(3),
+        Constraint::Length(11),
+        Constraint::Length(if narrow { 18 } else { 21 }),
+    ];
+    if !narrow {
+        widths.push(Constraint::Length(8));
+    }
+    widths.push(Constraint::Length(7));
+    widths.push(Constraint::Length(6));
+    if wide {
+        widths.push(Constraint::Length(9));
+    }
+
+    let table = Table::new(rows, widths)
+        .header(header)
+        .block(panel(state, "Processes"))
+        .row_highlight_style(Style::default().bg(p.surface));
 
     let mut ts = TableState::default();
     ts.select(selected_row);
@@ -1145,6 +1389,75 @@ fn draw_stat_panel(
     );
 }
 
+fn treemap_color(name: &str, p: &crate::theme_map::Palette) -> Color {
+    let n = name.to_lowercase();
+    let browser = [
+        "firefox",
+        "zen",
+        "chrome",
+        "chromium",
+        "brave",
+        "edge",
+        "vivaldi",
+        "librewolf",
+        "floorp",
+        "safari",
+    ];
+    let vm = [
+        "qemu",
+        "virtualbox",
+        "vmware",
+        "docker",
+        "podman",
+        "containerd",
+        "kvm",
+    ];
+    let dev = [
+        "code", "codium", "opencode", "java", "node", "python", "rust", "cargo", "android",
+        "studio", "idea", "terminal", "shell", "zsh", "bash", "git",
+    ];
+    let media = [
+        "mpv",
+        "spotify",
+        "stremio",
+        "vlc",
+        "pipewire",
+        "obs",
+        "rhythmbox",
+    ];
+    let system = [
+        "systemd",
+        "gnome",
+        "journal",
+        "dbus",
+        "sshd",
+        "kernel",
+        "kworker",
+        "dnf",
+        "packagekit",
+        "avahi",
+        "cups",
+        "networkmanager",
+        "polkit",
+        "gdm",
+        "xdg",
+        "pulse",
+    ];
+    if browser.iter().any(|k| n.contains(k)) {
+        p.category(0)
+    } else if vm.iter().any(|k| n.contains(k)) {
+        p.category(1)
+    } else if dev.iter().any(|k| n.contains(k)) {
+        p.category(3)
+    } else if media.iter().any(|k| n.contains(k)) {
+        p.category(5)
+    } else if system.iter().any(|k| n.contains(k)) {
+        p.dim
+    } else {
+        blend(p.accent, p.dim, 0.55)
+    }
+}
+
 fn draw_treemap(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
     let block = panel(state, "Memory treemap by app (PSS)");
@@ -1155,18 +1468,44 @@ fn draw_treemap(f: &mut Frame, state: &AppState, area: Rect) {
     }
     let mut groups: Vec<&Group> = state.snapshot.groups.iter().filter(|g| g.pss > 0).collect();
     groups.sort_by_key(|g| std::cmp::Reverse(g.pss));
-    let total = groups.len();
-    let top_n = 20.min(total);
+
     let mut entries: Vec<(String, u64, Color)> = groups
         .iter()
-        .take(top_n)
-        .enumerate()
-        .map(|(i, g)| (g.name.clone(), g.pss, p.category(i)))
+        .map(|g| (g.name.clone(), g.pss, treemap_color(&g.name, &p)))
         .collect();
-    if total > top_n {
-        let rest: u64 = groups[top_n..].iter().map(|g| g.pss).sum();
-        entries.push((format!("other ({})", total - top_n), rest, p.category(7)));
+    let mut other_n = 0usize;
+
+    // Merge slivers (anything that cannot host a label) into a single "other" cell.
+    for _ in 0..8 {
+        let values: Vec<f64> = entries.iter().map(|e| e.1 as f64).collect();
+        let rects = squarify(&values, inner.width as f64, inner.height as f64);
+        let small: Vec<usize> = rects
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| r.w < 8.0 || r.h < 2.0)
+            .map(|(i, _)| i)
+            .collect();
+        if small.is_empty() || entries.len() < 3 {
+            break;
+        }
+        let rest_sum: u64 = small.iter().map(|&i| entries[i].1).sum();
+        let n = small.len();
+        for i in small.iter().rev() {
+            entries.remove(*i);
+        }
+        other_n += n;
+        if let Some(o) = entries.iter_mut().find(|e| e.0.starts_with("other")) {
+            o.1 = o.1.saturating_add(rest_sum);
+        } else {
+            entries.push(("other".to_string(), rest_sum, p.dim));
+        }
     }
+    if other_n > 0 {
+        if let Some(o) = entries.iter_mut().find(|e| e.0.starts_with("other")) {
+            o.0 = format!("other ({other_n})");
+        }
+    }
+
     let values: Vec<f64> = entries.iter().map(|e| e.1 as f64).collect();
     let rects = squarify(&values, inner.width as f64, inner.height as f64);
     // Squarify can leave a rounding remainder; stretch to fill the panel.
@@ -1238,7 +1577,7 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
         .constraints([
             Constraint::Length(1),
             Constraint::Min(4),
-            Constraint::Length(2),
+            Constraint::Length(if area.width >= 120 { 1 } else { 2 }),
         ])
         .split(area);
 
@@ -1434,9 +1773,13 @@ fn draw_ports_grouped(f: &mut Frame, state: &AppState, area: Rect) {
             ),
         ];
         if wide {
-            cells.push(Cell::from(Line::from(
-                g.cwd.clone().unwrap_or_else(|| "—".to_string()),
-            )));
+            cells.push(Cell::from(Line::from(format!(
+                " {}",
+                g.cwd
+                    .as_deref()
+                    .map(|d| short_path(d, 30))
+                    .unwrap_or_else(|| "—".to_string())
+            ))));
         }
         let mut row = Row::new(cells);
         if selected {
@@ -1473,7 +1816,7 @@ fn draw_ports_grouped(f: &mut Frame, state: &AppState, area: Rect) {
     ];
     if wide {
         head.push(Cell::from(Span::styled(
-            "Working dir",
+            " Working dir",
             Style::default().fg(p.dim),
         )));
     }
@@ -1541,7 +1884,7 @@ fn draw_ports_flat(f: &mut Frame, state: &AppState, area: Rect) {
     ];
     if wide {
         head.push(Cell::from(Span::styled(
-            "Working dir",
+            " Working dir",
             Style::default().fg(p.dim),
         )));
     }
@@ -1570,9 +1913,13 @@ fn draw_ports_flat(f: &mut Frame, state: &AppState, area: Rect) {
                 Cell::from(Line::from(scope).style(Style::default().fg(color))),
             ];
             if wide {
-                cells.push(Cell::from(Line::from(
-                    s.cwd.clone().unwrap_or_else(|| "—".to_string()),
-                )));
+                cells.push(Cell::from(Line::from(format!(
+                    " {}",
+                    s.cwd
+                        .as_deref()
+                        .map(|d| short_path(d, 34))
+                        .unwrap_or_else(|| "—".to_string())
+                ))));
             }
             Row::new(cells)
         })
@@ -1632,7 +1979,7 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(if compact { 4 } else { 5 }),
+            Constraint::Length(4),
             Constraint::Length(if compact { 5 } else { 9 }),
             Constraint::Min(5),
         ])
@@ -1689,15 +2036,16 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
     let inner = block.inner(chunks[1]);
     f.render_widget(block, chunks[1]);
     if inner.width > 2 && inner.height > 0 {
-        let graph = crate::graph::braille_area_max(
+        draw_area(
+            f.buffer_mut(),
+            inner,
             &s.series.power,
-            inner.width as usize,
-            inner.height as usize,
             p.accent,
-            blend(p.accent, p.base, 0.90),
+            blend(p.accent, p.base, 0.88),
+            blend(p.accent, p.text, 0.30),
             ymax,
+            false,
         );
-        f.render_widget(Paragraph::new(graph), inner);
     }
 
     // Top consumers: one bar colour, values aligned in a column, one footnote.
@@ -1708,6 +2056,7 @@ fn draw_power(f: &mut Frame, state: &AppState, area: Rect) {
         .snapshot
         .groups
         .iter()
+        .filter(|g| !g.name.starts_with("kworker") && !g.name.contains("kworker/"))
         .map(|g| (g, avg_last(&g.spark, n)))
         .filter(|(_, a)| *a > 0.0005)
         .collect();
@@ -1799,6 +2148,23 @@ fn avg_last(v: &[f64], n: usize) -> f64 {
     }
     let n = n.clamp(1, v.len());
     v[v.len() - n..].iter().copied().sum::<f64>() / n as f64
+}
+
+/// `~/…` form, truncated from the left so the tail of the path stays visible.
+fn short_path(path: &str, max: usize) -> String {
+    let home = std::env::var("HOME").unwrap_or_default();
+    let mut p = if !home.is_empty() && path.starts_with(&home) {
+        format!("~{}", &path[home.len()..])
+    } else {
+        path.to_string()
+    };
+    if p.chars().count() > max {
+        let keep = max.saturating_sub(1);
+        let mut chars: Vec<char> = p.chars().rev().take(keep).collect();
+        chars.reverse();
+        p = format!("…{}", chars.into_iter().collect::<String>());
+    }
+    p
 }
 
 fn trunc(s: &str, n: usize) -> String {

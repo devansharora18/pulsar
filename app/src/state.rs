@@ -226,8 +226,6 @@ pub struct AppState {
     pub cpu_ema: f64,
     pub power_ema: f64,
     pub core_ema: Vec<f64>,
-    /// Rolling per-core usage for the tile sparklines.
-    pub core_hist: Vec<Vec<f64>>,
     last_seq: u64,
     order: Vec<String>,
     order_deadline: Instant,
@@ -274,7 +272,6 @@ impl AppState {
             cpu_ema: 0.0,
             power_ema: 0.0,
             core_ema: Vec::new(),
-            core_hist: Vec::new(),
             last_seq: 0,
             order: Vec::new(),
             order_deadline: Instant::now(),
@@ -288,7 +285,6 @@ impl AppState {
             let n = snap.cpu.cores.len();
             if self.core_ema.len() != n {
                 self.core_ema = vec![0.0; n];
-                self.core_hist = vec![Vec::new(); n];
             }
             let first = self.last_seq == 0;
             let alpha = self.config.ema_alpha();
@@ -303,11 +299,6 @@ impl AppState {
             self.power_ema = ema(self.power_ema, snap.power.total_w);
             for (i, c) in snap.cpu.cores.iter().enumerate() {
                 self.core_ema[i] = ema(self.core_ema[i], c.usage_pct);
-                let h = &mut self.core_hist[i];
-                h.push(c.usage_pct);
-                if h.len() > 30 {
-                    h.remove(0);
-                }
             }
             self.last_seq = snap.seq;
         }
