@@ -1,46 +1,46 @@
- PULSAR  │ cpu 11.3% │ mem 24.6 GB │ pwr 11.3 W │ 644 procs                                                                          AMD Ryzen AI 7 350 w/ Radeon 860M
+ PULSAR  │ cpu 14.1% │ mem 23.2 GB │ pwr 9.7 W │ 639 procs                                                                           AMD Ryzen AI 7 350 w/ Radeon 860M
   1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports  │  6 Settings
 ╭ Memory ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│  used 76%                                                                                                                          cache 17%                         │
+│  used 72%                                                                                                                   cache 14%              free 11%          │
 │                                                                                                                                                                      │
-│  24.6 GB really used  ·  5.1 GB cache you can reclaim  ·  6.1 GB available                                                                                           │
+│  23.2 GB really used  ·  4.4 GB cache you can reclaim  ·  7.4 GB available                                                                                           │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭ Really used ──────────────────────────────────────────╮╭ Reclaimable ─────────────────────────────────────────╮╭ Kernel + unattributed ──────────────────────────────╮
-│ 24.6 GB                                               ││ 5.1 GB                                               ││ 8.9 GB                                              │
-│ 80.2% of total · PSI 0.2                              ││ page cache + buffers + slab · shared 185 MB          ││ kernel 1.2 GB · unattributed 7.7 GB · Σ PSS 15.6 GB │
+│ 23.2 GB                                               ││ 4.4 GB                                               ││ 9.6 GB                                              │
+│ 75.7% of total · PSI 0.1                              ││ page cache + buffers + slab · shared 132 MB          ││ kernel 1.3 GB · unattributed 8.3 GB · Σ PSS 13.6 GB │
 │                                                       ││                                                      ││                                                     │
 ╰───────────────────────────────────────────────────────╯╰──────────────────────────────────────────────────────╯╰─────────────────────────────────────────────────────╯
 ╭ Memory treemap by app (PSS) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│  Zen Browser                                                                    google\x2dchrome         opencode        java                VSCodium                │
-│  4.7 GB                                                                         2.4 GB                   1.5 GB          1.2 GB              323 MB                  │
+│  Zen Browser                                                                                                                     opencode           google\x2dchr…   │
+│  5.9 GB                                                                                                                          1.5 GB             1.2 GB           │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                              python3.12              │
-│                                                                                                                                              316 MB                  │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                  GitHub Desktop      │
-│                                                                                                                                                  239 MB              │
-│                                                                                                                                                                      │
-│                                                                                                                                                      gnome-shell     │
-│                                                                                                                                                      222 MB          │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
-│                                                                                                                                                          systemd-…   │
-│                                                                                                                                                          144 MB      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
+│                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │  qemu-system-x86_64                                                                                                                                                  │
-│  2.8 GB                                                                                                                                                     Files    │
+│  2.6 GB                                                                                                                                                              │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
+│  other (167)                                                                                                                                        gnome-shell      │
+│  2.2 GB                                                                                                                                             282 MB           │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 reclaim: c drop caches  C drop all  m compact  p enable power metrics
-flush swap disabled: needs ~35.3 GB free to swap back in, only 6.1 GB available  ·  power metrics need the udev rule (pkexec)
-1-5 views  / search  j/k move  enter expand  x kill  s / 6 settings  ? help  q quit
+flush swap disabled: needs ~36.3 GB free to swap back in, only 7.4 GB available  ·  power metrics need the udev rule (pkexec)
+1-6 views  c/C caches  m compact  w swap  p power  s settings  ? help  q quit
