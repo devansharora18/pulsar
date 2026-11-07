@@ -89,7 +89,7 @@ are not split across processes); the Power view reconciles the two explicitly.
 | `m` | compact memory · `w` flush swap |
 | `p` | enable power metrics (RAPL udev, pkexec) |
 | `r` | reload config + theme |
-| `s` | settings · `a` activity log · `?` help |
+| `s` | settings panel · `a` activity log · `?` help |
 | `q` | quit |
 
 Every privileged action is confirmed first and logged in the activity drawer.
@@ -100,6 +100,26 @@ One semantic palette per theme: a single blue accent, and `ok`/`warn`/`crit` use
 thresholds (<60%, <85%, ≥85%). Charts are hand-built: eighth-block bars (`▏▎▍▌▋▊▉█`),
 `▁▂▃▄▅▆▇█` sparklines, and braille area graphs with a vertical gradient. Rounded borders,
 one base background everywhere, and one cell of padding inside panels.
+
+## Settings
+
+Press `s` for a navigable settings panel. `j`/`k` move, `←`/`→` change, `Enter` toggles or
+runs an action, `S` saves and `Esc` closes (which also saves).
+
+| Row | What it does |
+|---|---|
+| Theme | cycles built-in themes and any `.toml` in `~/.config/pulsar/themes/` (live) |
+| Nerd icons | tab/header glyphs on/off (live) |
+| Refresh | sampler interval, 500–5000 ms (live) |
+| Smoothing | EMA weight, 0–90% (live) |
+| TDP override | `auto` or 5–500 W for the power model (live) |
+| History | ring-buffer samples, 10–600 (applies on restart) |
+| Hide kernel threads | also used by the process table (live) |
+| Confirm destructive | kill / privileged confirmation (live) |
+| Save config | writes `~/.config/pulsar/config.toml` |
+| Reload from disk | re-reads the config and theme |
+| Export theme | writes the current theme to `themes/<name>.toml` |
+| Reset defaults | restores the default config |
 
 ## Requirements
 

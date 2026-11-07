@@ -4,6 +4,8 @@
 //! app id) is read once per new pid/starttime, not once per tick.
 
 use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use tokio::sync::watch;
@@ -331,9 +333,16 @@ impl Sampler {
 
     /// Spawn the sampler on a dedicated thread running a tokio current-thread runtime, and
     /// publish snapshots over a `watch` channel.
-    pub fn spawn(config: Config) -> (watch::Receiver<SystemSnapshot>, JoinHandle<()>) {
+    pub fn spawn(
+        config: Config,
+    ) -> (
+        watch::Receiver<SystemSnapshot>,
+        JoinHandle<()>,
+        SamplerControl,
+    ) {
         let (tx, rx) = watch::channel(SystemSnapshot::default());
-        let interval = config.refresh_ms;
+        let control = SamplerControl::new(config.refresh_ms, config.tdp_w);
+        let ctl = control.clone();
         let handle = std::thread::Builder::new()
             .name("pulsar-sampler".into())
             .spawn(move || {
@@ -346,7 +355,9 @@ impl Sampler {
                     // First tick immediately so the UI is never empty.
                     let _ = tx.send(sampler.tick());
                     loop {
-                        tokio::time::sleep(std::time::Duration::from_millis(interval)).await;
+                        tokio::time::sleep(std::time::Duration::from_millis(ctl.refresh_ms()))
+                            .await;
+                        sampler.power.set_tdp_w(ctl.tdp_w());
                         if tx.send(sampler.tick()).is_err() {
                             break;
                         }
@@ -354,7 +365,47 @@ impl Sampler {
                 });
             })
             .expect("spawn sampler thread");
-        (rx, handle)
+        (rx, handle, control)
+    }
+}
+
+/// Live knobs the UI can change without restarting the sampler.
+#[derive(Debug, Clone)]
+pub struct SamplerControl {
+    refresh_ms: Arc<AtomicU64>,
+    /// TDP override as `f64` bits; 0 means "auto".
+    tdp_bits: Arc<AtomicU64>,
+}
+
+impl SamplerControl {
+    fn new(refresh_ms: u64, tdp_w: Option<f64>) -> Self {
+        SamplerControl {
+            refresh_ms: Arc::new(AtomicU64::new(refresh_ms.clamp(500, 5000))),
+            tdp_bits: Arc::new(AtomicU64::new(tdp_w.map(f64::to_bits).unwrap_or(0))),
+        }
+    }
+
+    pub fn set_refresh_ms(&self, ms: u64) {
+        self.refresh_ms
+            .store(ms.clamp(500, 5000), Ordering::Relaxed);
+    }
+
+    pub fn refresh_ms(&self) -> u64 {
+        self.refresh_ms.load(Ordering::Relaxed).clamp(500, 5000)
+    }
+
+    pub fn set_tdp_w(&self, tdp: Option<f64>) {
+        let bits = tdp.map(f64::to_bits).unwrap_or(0);
+        self.tdp_bits.store(bits, Ordering::Relaxed);
+    }
+
+    pub fn tdp_w(&self) -> Option<f64> {
+        let bits = self.tdp_bits.load(Ordering::Relaxed);
+        if bits == 0 {
+            None
+        } else {
+            Some(f64::from_bits(bits))
+        }
     }
 }
 

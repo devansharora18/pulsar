@@ -42,6 +42,17 @@ impl View {
             View::Ports => "Ports",
         }
     }
+
+    /// Optional Nerd Font glyph for the tab bar.
+    pub fn icon(self) -> &'static str {
+        match self {
+            View::Overview => "◱",
+            View::Processes => "≡",
+            View::Memory => "▦",
+            View::Power => "⚡",
+            View::Ports => "⇄",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -101,6 +112,60 @@ pub enum Overlay {
     Settings,
 }
 
+/// Rows of the settings panel, in display order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Setting {
+    Theme,
+    Icons,
+    Refresh,
+    Smoothing,
+    Tdp,
+    History,
+    HideKernel,
+    Confirm,
+    Save,
+    Reload,
+    WriteTheme,
+    Reset,
+}
+
+pub const SETTINGS: [Setting; 12] = [
+    Setting::Theme,
+    Setting::Icons,
+    Setting::Refresh,
+    Setting::Smoothing,
+    Setting::Tdp,
+    Setting::History,
+    Setting::HideKernel,
+    Setting::Confirm,
+    Setting::Save,
+    Setting::Reload,
+    Setting::WriteTheme,
+    Setting::Reset,
+];
+
+/// Built-in themes plus any user `.toml` files in the theme directory.
+pub fn theme_names() -> Vec<String> {
+    let mut names: Vec<String> = Theme::builtin_names()
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    if let Ok(rd) = std::fs::read_dir(Theme::theme_dir()) {
+        for entry in rd.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("toml") {
+                continue;
+            }
+            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                if !names.iter().any(|n| n == stem) {
+                    names.push(stem.to_string());
+                }
+            }
+        }
+    }
+    names
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PendingKind {
     KillGroup,
@@ -151,6 +216,8 @@ pub struct AppState {
     pub activity: Vec<ActionResult>,
     pub confirm: Option<Pending>,
     pub overlay: Option<Overlay>,
+    pub settings_cursor: usize,
+    pub control: Option<pulsar_core::sampler::SamplerControl>,
     pub message: Option<(String, Instant)>,
     pub should_quit: bool,
     /// Smoothed headline values (EMA, 1 Hz) so bars do not jitter.
@@ -197,6 +264,8 @@ impl AppState {
             activity: Vec::new(),
             confirm: None,
             overlay: None,
+            settings_cursor: 0,
+            control: None,
             message: None,
             should_quit: false,
             cpu_ema: 0.0,
@@ -219,7 +288,7 @@ impl AppState {
                 self.core_hist = vec![Vec::new(); n];
             }
             let first = self.last_seq == 0;
-            let alpha = 0.25;
+            let alpha = self.config.ema_alpha();
             let ema = |prev: f64, v: f64| {
                 if first {
                     v
@@ -255,6 +324,10 @@ impl AppState {
 
     pub fn reload_config(&mut self) {
         let cfg = Config::load();
+        if let Some(c) = &self.control {
+            c.set_refresh_ms(cfg.refresh_ms);
+            c.set_tdp_w(cfg.tdp_w);
+        }
         self.theme = Theme::resolve(&cfg.theme);
         self.palette = Palette::from_theme(&self.theme);
         self.hide_kernel = cfg.hide_kernel_threads;

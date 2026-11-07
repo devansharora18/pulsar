@@ -1,26 +1,26 @@
- PULSAR  │ cpu 98.9% │ mem 24.8 GB │ ⚡  36.4 W │ 605 procs                                                                            AMD Ryzen AI 7 350 w/ Radeon 860M
-  1 Overview  │  2 Processes  │  3 Memory  │  4 Power  │  5 Ports
-listening 102  exposed 40  unowned 27   grouped  j/k move  enter expand  u group  x kill
+ PULSAR  │ cpu 5.3% │ mem 23.9 GB │ ⚡  7.4 W │ 636 procs                                                                              AMD Ryzen AI 7 350 w/ Radeon 860M
+  1 ◱ Overview  │  2 ≡ Processes  │  3 ▦ Memory  │  4 ⚡  Power  │  5 ⇄ Ports
+listening 105  exposed 37  unowned 27   grouped  j/k move  enter expand  u group  x kill
 ╭ Open ports (grouped by process) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Process                            Ports / state                      Scope                PID Working dir                                                           │
 │ unowned ×27                        22, 53, 323, 443, 631, 5252…       all ifaces             — —                                                                     │
 │ wsdd ×27                           3702, 32928, 33786, 45336, …       all ifaces         13420 /home/devansharora18                                                  │
+│ adb ×9                             5037, 5353, 34559, 36927, 4…       all ifaces        404727 /home/devansharora18                                                  │
 │ qemu-system-x86 ×9                 5554, 5555, 8554, 33077, 34…       interface         557485 /home/devansharora18                                                  │
-│ zen ×6                             35291, 42760, 43343, 52747,…       all ifaces        307319 /home/devansharora18                                                  │
-│ adb ×5                             5037, 5353, 58309                  all ifaces        404727 /home/devansharora18                                                  │
+│ netsimd ×7                         6402, 7681, 38059, 40479, 4…       all ifaces        557598 /home/devansharora18                                                  │
 │ cloudflared ×5                     20241, 33318, 33945, 34461,…       all ifaces          4106 /home/devansharora18                                                  │
 │ stremio-runtime ×5                 5353, 11470, 12470, 37197, …       all ifaces          6668 /home/devansharora18                                                  │
-│ netsimd ×4                         6402, 7681, 40479                  interface         557598 /home/devansharora18                                                  │
-│ java ×3                            35893, 44077, 60971                all ifaces        772637 /home/devansharora18/Documents/Git                                    │
+│ java ×3                            34659, 35902, 44087                all ifaces       1348917 /home/devansharora18/.gradle/daemo                                    │
 │ chrome ×2                          5353                               interface         321030 /home/devansharora18                                                  │
+│ dart:dartdev_ao ×2                 33787, 36747                       localhost        1219481 /home/devansharora18/Documents/Git                                    │
 │ kdeconnectd ×2                     1716                               all ifaces          4663 /home/devansharora18                                                  │
 │ github-desktop                     37277                              localhost         197189 /home/devansharora18                                                  │
-│ java                               57360                              all ifaces        780223 /home/devansharora18/Documents/Git                                    │
-│ java                               17777                              interface         773006 /home/devansharora18/.local/share/                                    │
+│ node                               5174                               localhost        1066256 /home/devansharora18/Documents/Git                                    │
 │ node                               5173                               localhost         645602 /home/devansharora18/Documents/Git                                    │
-│ opencode                           49374                              localhost          58627 /home/devansharora18                                                  │
 │ opencode                           62101                              localhost         643635 /home/devansharora18/Documents/Git                                    │
+│ opencode                           49374                              localhost          58627 /home/devansharora18                                                  │
 │ pasta.avx2                         8787                               localhost           1664 /                                                                     │
+│ python3                            8099                               all ifaces       1071902 /home/devansharora18/Documents/Git                                    │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │

@@ -81,6 +81,30 @@ pub fn run(dir: PathBuf, png: bool, mut rx: watch::Receiver<SystemSnapshot>) {
             }
             let _ = vi;
         }
+
+        // Settings panel capture.
+        state.overlay = Some(crate::state::Overlay::Settings);
+        state.settings_cursor = 0;
+        let mut terminal =
+            Terminal::new(TestBackend::new(dump_size().0, dump_size().1)).expect("test terminal");
+        terminal.draw(|f| ui::draw(f, &mut state)).expect("draw");
+        let buf = terminal.backend().buffer().clone();
+        let base = format!(
+            "{}-settings-{}",
+            if ti == 0 { "01" } else { "02" },
+            slug(theme_name)
+        );
+        let txt = dir.join(format!("{base}.txt"));
+        let _ = std::fs::write(&txt, buffer_to_text(&buf));
+        println!("wrote {}", txt.display());
+        if png {
+            let out = dir.join(format!("{base}.png"));
+            match rasterize(&buf, state.palette.base, &out) {
+                Ok(()) => println!("wrote {}", out.display()),
+                Err(e) => eprintln!("png dump failed: {e}"),
+            }
+        }
+        state.overlay = None;
     }
 }
 

@@ -76,7 +76,14 @@ fn draw_header(f: &mut Frame, state: &AppState, area: Rect) {
         ),
         Span::styled(" GB", Style::default().fg(p.dim)),
         sep(),
-        Span::styled("⚡ ", Style::default().fg(p.dim)),
+        Span::styled(
+            if state.config.nerd_icons {
+                "⚡ "
+            } else {
+                "pwr "
+            },
+            Style::default().fg(p.dim),
+        ),
         Span::styled(format!("{:.1}", power.total_w), Style::default().fg(p.text)),
         Span::styled(" W", Style::default().fg(p.dim)),
         sep(),
@@ -111,9 +118,14 @@ fn draw_tabs(f: &mut Frame, state: &AppState, area: Rect) {
         .iter()
         .enumerate()
         .map(|(i, v)| {
+            let label = if state.config.nerd_icons {
+                format!("{} {}", v.icon(), v.label())
+            } else {
+                v.label().to_string()
+            };
             Line::from(vec![
                 Span::styled(format!(" {} ", i + 1), Style::default().fg(p.dim)),
-                Span::styled(v.label(), Style::default().fg(p.dim)),
+                Span::styled(label, Style::default().fg(p.dim)),
                 Span::styled(" ", Style::default()),
             ])
         })

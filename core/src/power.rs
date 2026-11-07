@@ -134,6 +134,14 @@ impl PowerSampler {
         self.tdp_w
     }
 
+    /// Update the TDP override at runtime (settings panel). `None` re-probes or falls back.
+    pub fn set_tdp_w(&mut self, tdp: Option<f64>) {
+        self.tdp_w = tdp
+            .map(|t| t.clamp(5.0, 500.0))
+            .or_else(crate::rapl::read_tdp_w)
+            .unwrap_or(DEFAULT_TDP_W);
+    }
+
     /// Sample, given the interval's overall CPU utilisation (0..=1) for the model fallback.
     pub fn sample(&mut self, cpu_util: f64) -> SystemPower {
         let mut kind = PowerKind::Unavailable;

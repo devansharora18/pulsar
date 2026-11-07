@@ -6,7 +6,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Clear, Padding, Paragraph, Wrap};
 use ratatui::Frame;
 
-use crate::state::{AppState, Overlay, PendingKind};
+use crate::state::{AppState, Overlay, PendingKind, Setting, SETTINGS};
 
 pub fn draw(f: &mut Frame, state: &mut AppState, area: Rect) {
     if state.confirm.is_some() {
@@ -198,95 +198,94 @@ fn draw_activity(f: &mut Frame, state: &AppState, area: Rect) {
 
 fn draw_settings(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
-    let box_area = centered(area, 66, 22);
+    let width = 78.min(area.width.saturating_sub(4)).max(50);
+    let height = (SETTINGS.len() as u16 + 6)
+        .min(area.height.saturating_sub(2))
+        .max(12);
+    let box_area = centered(area, width, height);
     f.render_widget(Clear, box_area);
-    f.render_widget(popup(state, "Settings", box_area), box_area);
-    let inner = popup(state, "Settings", box_area).inner(box_area);
-    let c = &state.config;
-    let lines = vec![
-        Line::from(Span::styled(
-            " Adjust with the keys shown; changes apply live.",
-            Style::default().fg(p.dim),
-        )),
-        Line::from(""),
-        section(&state.palette, "Theme", &c.theme, "t cycles theme"),
-        section(
-            &state.palette,
-            "Refresh",
-            &format!("{} ms", c.refresh_ms),
-            "[ ] adjusts 500–5000 ms",
-        ),
-        section(
-            &state.palette,
-            "Opacity",
-            &format!("{:.2}", c.opacity),
-            "- + adjust 0.5–1.0",
-        ),
-        section(
-            &state.palette,
-            "Font size",
-            &format!("{}", c.font_size),
-            "context only",
-        ),
-        section(
-            &state.palette,
-            "Corner radius",
-            &format!("{}", c.corner_radius),
-            "context only",
-        ),
-        section(
-            &state.palette,
-            "Density",
-            &format!("{:?}", c.density).to_lowercase(),
-            "d toggles compact/comfy",
-        ),
-        section(
-            &state.palette,
-            "Hide kernel threads",
-            if c.hide_kernel_threads { "yes" } else { "no" },
-            "h toggles",
-        ),
-        section(
-            &state.palette,
-            "Confirm privileged",
-            if c.confirm_kill { "yes" } else { "no" },
-            "K toggles",
-        ),
-        Line::from(""),
-        Line::from(Span::styled(
-            format!(
-                " config: {}",
-                pulsar_core::config::Config::config_path().display()
+    let block = popup(state, "Settings", box_area).padding(Padding::new(1, 1, 0, 0));
+    let inner = block.inner(box_area);
+    f.render_widget(block, box_area);
+
+    let list_h = inner.height.saturating_sub(3).max(1);
+    let cursor = state.settings_cursor.min(SETTINGS.len() - 1);
+    let offset = cursor.saturating_sub(list_h as usize - 1);
+    let mut lines = Vec::new();
+    for (i, setting) in SETTINGS
+        .iter()
+        .enumerate()
+        .skip(offset)
+        .take(list_h as usize)
+    {
+        let (label, value, hint) = setting_row(state, *setting);
+        let selected = i == cursor;
+        let mut spans = vec![
+            Span::styled(format!(" {label:<24}"), Style::default().fg(p.text)),
+            Span::styled(
+                format!("{value:<20}"),
+                Style::default().fg(p.accent).add_modifier(Modifier::BOLD),
             ),
-            Style::default().fg(p.dim),
-        )),
-        Line::from(Span::styled(
-            format!(
-                " themes: {}",
-                pulsar_core::theme::Theme::theme_dir().display()
-            ),
-            Style::default().fg(p.dim),
-        )),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled(" [S] ", Style::default().fg(p.base).bg(p.accent)),
-            Span::styled("save   ", Style::default().fg(p.text)),
-            Span::styled(" [w] ", Style::default().fg(p.base).bg(p.border)),
-            Span::styled("write theme file   ", Style::default().fg(p.text)),
-            Span::styled(" [Esc] ", Style::default().fg(p.base).bg(p.border)),
-            Span::styled("close", Style::default().fg(p.text)),
-        ]),
-    ];
+            Span::styled(hint, Style::default().fg(p.dim)),
+        ];
+        if selected {
+            for s in &mut spans {
+                s.style = s.style.bg(p.surface);
+            }
+        }
+        lines.push(Line::from(spans));
+    }
     f.render_widget(Paragraph::new(lines), inner);
+
+    let foot = Rect {
+        x: inner.x,
+        y: inner.y + inner.height.saturating_sub(2),
+        width: inner.width,
+        height: 2,
+    };
+    f.render_widget(
+        Paragraph::new(vec![
+            Line::from(Span::styled(
+                "j/k move · ←/→ change · enter toggle/run · S save · esc close",
+                Style::default().fg(p.dim),
+            )),
+            Line::from(Span::styled(
+                format!("{}", pulsar_core::config::Config::config_path().display()),
+                Style::default().fg(p.border),
+            )),
+        ])
+        .wrap(Wrap { trim: true }),
+        foot,
+    );
 }
 
-fn section<'a>(p: &crate::theme_map::Palette, label: &str, value: &str, hint: &str) -> Line<'a> {
-    Line::from(vec![
-        Span::styled(format!(" {label:<22}"), Style::default().fg(p.text)),
-        Span::styled(
-            format!("{value:<16}"),
-            Style::default().fg(p.accent).add_modifier(Modifier::BOLD),
+fn setting_row(state: &AppState, setting: Setting) -> (&'static str, String, &'static str) {
+    let c = &state.config;
+    let onoff = |b: bool| {
+        if b {
+            "on".to_string()
+        } else {
+            "off".to_string()
+        }
+    };
+    match setting {
+        Setting::Theme => ("Theme", c.theme.clone(), "cycle"),
+        Setting::Icons => ("Nerd icons", onoff(c.nerd_icons), "enter"),
+        Setting::Refresh => ("Refresh", format!("{} ms", c.refresh_ms), "250 ms · live"),
+        Setting::Smoothing => ("Smoothing", format!("{}%", c.smoothing), "10% steps"),
+        Setting::Tdp => (
+            "TDP override",
+            c.tdp_w
+                .map(|t| format!("{t:.0} W"))
+                .unwrap_or_else(|| "auto".to_string()),
+            "5 W · live",
         ),
-        Span::styled(hint.to_string(), Style::default().fg(p.dim)),
-    ])
+        Setting::History => ("History", format!("{} samples", c.history_len), "restart"),
+        Setting::HideKernel => ("Hide kernel threads", onoff(c.hide_kernel_threads), "enter"),
+        Setting::Confirm => ("Confirm destructive", onoff(c.confirm_kill), "enter"),
+        Setting::Save => ("Save config", String::new(), "enter"),
+        Setting::Reload => ("Reload from disk", String::new(), "enter"),
+        Setting::WriteTheme => ("Export theme", String::new(), "enter"),
+        Setting::Reset => ("Reset defaults", String::new(), "enter"),
+    }
 }

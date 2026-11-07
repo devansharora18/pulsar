@@ -24,14 +24,14 @@ fn main() {
     let png = cli.png;
     let _ = CLI.set(cli);
 
-    let (rx, _handle) = {
-        let mut scfg = AppState::new().config.clone();
-        // In dump mode sample fast so the history graphs are full for the capture.
-        if is_dump {
-            scfg.refresh_ms = 100;
-        }
-        Sampler::spawn(scfg)
-    };
+    let mut state = AppState::new();
+    let mut scfg = state.config.clone();
+    // In dump mode sample fast so the history graphs are full for the capture.
+    if is_dump {
+        scfg.refresh_ms = 100;
+    }
+    let (rx, _handle, control) = Sampler::spawn(scfg);
+    state.control = Some(control);
 
     if let Some(dir) = dump {
         dump::run(dir, png, rx);
@@ -39,7 +39,6 @@ fn main() {
     }
 
     let mut terminal = ratatui::init();
-    let mut state = AppState::new();
     let result = run(&mut terminal, &mut state, rx);
     ratatui::restore();
     if let Err(e) = result {
@@ -425,70 +424,139 @@ fn confirm(state: &mut AppState, pending: &Pending) {
 }
 
 fn settings_key(state: &mut AppState, k: KeyEvent) {
+    let last = crate::state::SETTINGS.len() - 1;
     match k.code {
-        KeyCode::Esc | KeyCode::Char('s') => state.overlay = None,
-        KeyCode::Char('t') => {
-            let names = pulsar_core::theme::Theme::builtin_names();
-            let idx = names
-                .iter()
-                .position(|n| *n == state.config.theme)
-                .map(|i| (i + 1) % names.len())
-                .unwrap_or(0);
-            state.config.theme = names[idx].to_string();
-            state.theme = pulsar_core::theme::Theme::resolve(&state.config.theme);
-            state.palette = crate::theme_map::Palette::from_theme(&state.theme);
+        KeyCode::Esc | KeyCode::Char('s') => {
+            save_settings(state);
+            state.overlay = None;
         }
-        KeyCode::Char(']') => {
-            state.config.refresh_ms = (state.config.refresh_ms + 100).min(5000);
+        KeyCode::Char('j') | KeyCode::Down => {
+            state.settings_cursor = (state.settings_cursor + 1).min(last);
         }
-        KeyCode::Char('[') => {
-            state.config.refresh_ms = state.config.refresh_ms.saturating_sub(100).max(500);
+        KeyCode::Char('k') | KeyCode::Up => {
+            state.settings_cursor = state.settings_cursor.saturating_sub(1);
         }
-        KeyCode::Char('+') | KeyCode::Char('=') => {
-            state.config.opacity = (state.config.opacity + 0.05).min(1.0);
+        KeyCode::Char('h') | KeyCode::Left | KeyCode::Char('-') => adjust_setting(state, false),
+        KeyCode::Char('l') | KeyCode::Right | KeyCode::Char('+') | KeyCode::Char('=') => {
+            adjust_setting(state, true)
         }
-        KeyCode::Char('-') => {
-            state.config.opacity = (state.config.opacity - 0.05).max(0.5);
+        KeyCode::Enter | KeyCode::Char(' ') => activate_setting(state),
+        KeyCode::Char('S') => save_settings(state),
+        _ => {}
+    }
+}
+
+fn save_settings(state: &mut AppState) {
+    let r = match state.config.save() {
+        Ok(()) => pulsar_core::actions::ActionResult {
+            action: "save-config".into(),
+            target: "config.toml".into(),
+            ok: true,
+            message: format!(
+                "saved to {}",
+                pulsar_core::config::Config::config_path().display()
+            ),
+            privileged: false,
+        },
+        Err(e) => pulsar_core::actions::ActionResult {
+            action: "save-config".into(),
+            target: "config.toml".into(),
+            ok: false,
+            message: format!("{e}"),
+            privileged: false,
+        },
+    };
+    state.log(r);
+}
+
+fn cycle_theme(state: &mut AppState, forward: bool) {
+    let names = crate::state::theme_names();
+    if names.is_empty() {
+        return;
+    }
+    let idx = names
+        .iter()
+        .position(|n| *n == state.config.theme)
+        .unwrap_or(0);
+    let next = if forward {
+        (idx + 1) % names.len()
+    } else {
+        (idx + names.len() - 1) % names.len()
+    };
+    state.config.theme = names[next].clone();
+    state.theme = pulsar_core::theme::Theme::resolve(&state.config.theme);
+    state.palette = crate::theme_map::Palette::from_theme(&state.theme);
+}
+
+fn adjust_setting(state: &mut AppState, forward: bool) {
+    let setting =
+        crate::state::SETTINGS[state.settings_cursor.min(crate::state::SETTINGS.len() - 1)];
+    match setting {
+        crate::state::Setting::Theme => cycle_theme(state, forward),
+        crate::state::Setting::Icons => {
+            state.config.nerd_icons = !state.config.nerd_icons;
         }
-        KeyCode::Char('h') => {
+        crate::state::Setting::Refresh => {
+            let delta = if forward { 250 } else { -250 };
+            let v = state.config.refresh_ms as i64 + delta;
+            state.config.refresh_ms = v.clamp(500, 5000) as u64;
+            if let Some(c) = &state.control {
+                c.set_refresh_ms(state.config.refresh_ms);
+            }
+        }
+        crate::state::Setting::Smoothing => {
+            let delta = if forward { 10 } else { -10 };
+            let v = state.config.smoothing as i16 + delta;
+            state.config.smoothing = v.clamp(0, 90) as u8;
+        }
+        crate::state::Setting::Tdp => {
+            state.config.tdp_w = match (state.config.tdp_w, forward) {
+                (None, true) => Some(10.0),
+                (None, false) => None,
+                (Some(v), true) => Some((v + 5.0).min(500.0)),
+                (Some(v), false) if v > 15.0 => Some(v - 5.0),
+                (Some(_), false) => None,
+            };
+            if let Some(c) = &state.control {
+                c.set_tdp_w(state.config.tdp_w);
+            }
+        }
+        crate::state::Setting::History => {
+            let delta = if forward { 30 } else { -30 };
+            let v = state.config.history_len as i64 + delta;
+            state.config.history_len = v.clamp(10, 600) as usize;
+        }
+        crate::state::Setting::HideKernel => {
             state.config.hide_kernel_threads = !state.config.hide_kernel_threads;
             state.hide_kernel = state.config.hide_kernel_threads;
+            state.force_reorder();
         }
-        KeyCode::Char('K') => state.config.confirm_kill = !state.config.confirm_kill,
-        KeyCode::Char('d') => {
-            state.config.density = match state.config.density {
-                pulsar_core::config::Density::Compact => pulsar_core::config::Density::Comfy,
-                pulsar_core::config::Density::Comfy => pulsar_core::config::Density::Compact,
-            };
+        crate::state::Setting::Confirm => {
+            state.config.confirm_kill = !state.config.confirm_kill;
         }
-        KeyCode::Char('S') => {
-            let r = match state.config.save() {
-                Ok(_) => pulsar_core::actions::ActionResult {
-                    action: "save-config".into(),
-                    target: "config.toml".into(),
-                    ok: true,
-                    message: format!(
-                        "saved to {}",
-                        pulsar_core::config::Config::config_path().display()
-                    ),
-                    privileged: false,
-                },
-                Err(e) => pulsar_core::actions::ActionResult {
-                    action: "save-config".into(),
-                    target: "config.toml".into(),
-                    ok: false,
-                    message: format!("{e}"),
-                    privileged: false,
-                },
-            };
-            state.log(r);
+        _ => {}
+    }
+}
+
+fn activate_setting(state: &mut AppState) {
+    let setting =
+        crate::state::SETTINGS[state.settings_cursor.min(crate::state::SETTINGS.len() - 1)];
+    match setting {
+        crate::state::Setting::Icons => state.config.nerd_icons = !state.config.nerd_icons,
+        crate::state::Setting::HideKernel => {
+            state.config.hide_kernel_threads = !state.config.hide_kernel_threads;
+            state.hide_kernel = state.config.hide_kernel_threads;
+            state.force_reorder();
         }
-        KeyCode::Char('w') => {
+        crate::state::Setting::Confirm => state.config.confirm_kill = !state.config.confirm_kill,
+        crate::state::Setting::Save => save_settings(state),
+        crate::state::Setting::Reload => state.reload_config(),
+        crate::state::Setting::WriteTheme => {
             let dir = pulsar_core::theme::Theme::theme_dir();
             let _ = std::fs::create_dir_all(&dir);
             let path = dir.join(format!("{}.toml", state.config.theme));
             let r = match std::fs::write(&path, state.theme.to_toml()) {
-                Ok(_) => pulsar_core::actions::ActionResult {
+                Ok(()) => pulsar_core::actions::ActionResult {
                     action: "write-theme".into(),
                     target: path.display().to_string(),
                     ok: true,
@@ -504,6 +572,17 @@ fn settings_key(state: &mut AppState, k: KeyEvent) {
                 },
             };
             state.log(r);
+        }
+        crate::state::Setting::Reset => {
+            state.config = pulsar_core::config::Config::default();
+            if let Some(c) = &state.control {
+                c.set_refresh_ms(state.config.refresh_ms);
+                c.set_tdp_w(state.config.tdp_w);
+            }
+            state.theme = pulsar_core::theme::Theme::resolve(&state.config.theme);
+            state.palette = crate::theme_map::Palette::from_theme(&state.theme);
+            state.hide_kernel = state.config.hide_kernel_threads;
+            state.set_message("settings reset to defaults");
         }
         _ => {}
     }
