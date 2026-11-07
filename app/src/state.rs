@@ -211,6 +211,8 @@ pub struct AppState {
     pub hide_kernel: bool,
     pub selected: Option<String>,
     pub ports_selected: usize,
+    /// Stable identity of the selected port group (survives reordering).
+    pub ports_selected_key: Option<String>,
     pub ports_grouped: bool,
     pub ports_expanded: HashSet<String>,
     pub activity: Vec<ActionResult>,
@@ -259,6 +261,7 @@ impl AppState {
             hide_kernel,
             selected: None,
             ports_selected: 0,
+            ports_selected_key: None,
             ports_grouped: true,
             ports_expanded: HashSet::new(),
             activity: Vec::new(),
@@ -309,6 +312,11 @@ impl AppState {
             self.last_seq = snap.seq;
         }
         self.snapshot = snap;
+        // Anchor the Ports selection to a process the first time the list exists.
+        if self.view == View::Ports && self.ports_selected_key.is_none() {
+            let key = self.port_groups().first().map(|g| g.key.clone());
+            self.ports_selected_key = key;
+        }
     }
 
     pub fn set_message(&mut self, m: impl Into<String>) {
@@ -495,7 +503,14 @@ impl AppState {
             }
         }
         let mut groups: Vec<PortGroup<'_>> = map.into_values().collect();
-        groups.sort_by(|a, b| b.count().cmp(&a.count()).then_with(|| a.name.cmp(&b.name)));
+        // Stable ordering by process name/pid: socket counts fluctuate, but rows must not
+        // move under the cursor.
+        groups.sort_by(|a, b| {
+            a.name
+                .to_lowercase()
+                .cmp(&b.name.to_lowercase())
+                .then_with(|| a.pid.cmp(&b.pid))
+        });
         groups
     }
 
@@ -512,8 +527,47 @@ impl AppState {
         if groups.is_empty() {
             return None;
         }
+        if let Some(key) = &self.ports_selected_key {
+            // If the selected process vanished, do not silently fall back to a neighbour:
+            // the kill confirmation must always refer to the row the user chose.
+            return groups.iter().find(|g| &g.key == key).cloned();
+        }
         let i = self.ports_selected.min(groups.len() - 1);
         Some(groups.into_iter().nth(i).expect("index in range"))
+    }
+
+    /// Row index of the selected group in the current ordered list.
+    pub fn selected_port_index(&self, groups: &[PortGroup<'_>]) -> Option<usize> {
+        if groups.is_empty() {
+            return None;
+        }
+        if let Some(key) = &self.ports_selected_key {
+            return groups.iter().position(|g| &g.key == key);
+        }
+        Some(self.ports_selected.min(groups.len() - 1))
+    }
+
+    pub fn select_first_port(&mut self) {
+        if self.ports_grouped {
+            let key = self.port_groups().first().map(|g| g.key.clone());
+            self.ports_selected_key = key;
+        }
+        self.ports_selected = 0;
+    }
+
+    pub fn select_last_port(&mut self) {
+        let n = self.port_row_count();
+        if n == 0 {
+            self.ports_selected = 0;
+            self.ports_selected_key = None;
+            return;
+        }
+        let idx = n - 1;
+        if self.ports_grouped {
+            let key = self.port_groups().get(idx).map(|g| g.key.clone());
+            self.ports_selected_key = key;
+        }
+        self.ports_selected = idx;
     }
 
     pub fn toggle_port_group(&mut self) {
@@ -538,15 +592,37 @@ impl AppState {
         self.snapshot.sockets.get(i)
     }
 
-    /// Move the ports-list selection, clamped to the filtered list.
+    /// Move the ports-list selection. Grouped rows are keyed by process so a reorder can
+    /// never leave the cursor pointing at a different app.
     pub fn move_port_selection(&mut self, delta: i32) {
-        let count = self.port_row_count();
-        if count == 0 {
-            self.ports_selected = 0;
-            return;
+        if self.ports_grouped {
+            let n = self.port_groups().len();
+            if n == 0 {
+                self.ports_selected = 0;
+                self.ports_selected_key = None;
+                return;
+            }
+            let (next, key) = {
+                let groups = self.port_groups();
+                let cur = self
+                    .ports_selected_key
+                    .as_ref()
+                    .and_then(|k| groups.iter().position(|g| &g.key == k))
+                    .unwrap_or(self.ports_selected.min(n - 1));
+                let next = ((cur as i32 + delta).rem_euclid(n as i32)) as usize;
+                (next, groups[next].key.clone())
+            };
+            self.ports_selected = next;
+            self.ports_selected_key = Some(key);
+        } else {
+            let count = self.port_count();
+            if count == 0 {
+                self.ports_selected = 0;
+                return;
+            }
+            let cur = self.ports_selected.min(count - 1) as i32;
+            self.ports_selected = (cur + delta).rem_euclid(count as i32) as usize;
         }
-        let cur = self.ports_selected.min(count - 1) as i32;
-        self.ports_selected = (cur + delta).rem_euclid(count as i32) as usize;
     }
 
     pub fn passes_filter(&self, g: &Group, snapshot: &SystemSnapshot) -> bool {
@@ -593,6 +669,7 @@ impl AppState {
 }
 
 /// One row of the grouped Ports view: a process and the sockets it owns.
+#[derive(Clone)]
 pub struct PortGroup<'a> {
     pub key: String,
     pub name: String,
@@ -658,4 +735,68 @@ fn truncate(s: &str, n: usize) -> String {
     let mut out: String = s.chars().take(n - 1).collect();
     out.push('…');
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pulsar_core::sockets::ListeningSocket;
+
+    fn sock(pid: i32, comm: &str, port: u16) -> ListeningSocket {
+        ListeningSocket {
+            proto: "tcp".into(),
+            addr: "127.0.0.1".into(),
+            port,
+            state: "LISTEN".into(),
+            inode: port as u64,
+            pid: Some(pid),
+            comm: Some(comm.into()),
+            cwd: Some("/tmp".into()),
+        }
+    }
+
+    #[test]
+    fn port_order_is_stable_when_counts_change() {
+        let mut state = AppState::new();
+        state.snapshot.sockets = vec![
+            sock(1, "adb", 5037),
+            sock(2, "wsdd", 3702),
+            sock(2, "wsdd", 3703),
+            sock(2, "wsdd", 3704),
+        ];
+        state.ports_selected_key = Some("2:wsdd".into());
+        let order1: Vec<String> = state.port_groups().iter().map(|g| g.name.clone()).collect();
+        assert_eq!(order1, vec!["adb", "wsdd"]);
+
+        // adb suddenly owns more sockets; ordering must not move.
+        state.snapshot.sockets = vec![
+            sock(1, "adb", 5037),
+            sock(1, "adb", 5038),
+            sock(1, "adb", 5039),
+            sock(1, "adb", 5040),
+            sock(2, "wsdd", 3702),
+        ];
+        let order2: Vec<String> = state.port_groups().iter().map(|g| g.name.clone()).collect();
+        assert_eq!(order2, vec!["adb", "wsdd"]);
+        assert_eq!(state.selected_port_group().unwrap().name, "wsdd");
+    }
+
+    #[test]
+    fn missing_selected_group_does_not_fall_back() {
+        let mut state = AppState::new();
+        state.snapshot.sockets = vec![sock(1, "adb", 5037)];
+        state.ports_selected_key = Some("9:gone".into());
+        assert!(state.selected_port_group().is_none());
+        assert!(state.selected_port_index(&state.port_groups()).is_none());
+    }
+
+    #[test]
+    fn navigation_sets_a_stable_key() {
+        let mut state = AppState::new();
+        state.snapshot.sockets = vec![sock(1, "adb", 5037), sock(2, "wsdd", 3702)];
+        state.ports_selected_key = None;
+        state.ports_selected = 0;
+        state.move_port_selection(1);
+        assert_eq!(state.ports_selected_key.as_deref(), Some("2:wsdd"));
+    }
 }

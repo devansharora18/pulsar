@@ -1235,7 +1235,11 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(1), Constraint::Min(4)])
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Min(4),
+            Constraint::Length(2),
+        ])
         .split(area);
 
     let listening = state.port_count();
@@ -1310,6 +1314,69 @@ fn draw_ports(f: &mut Frame, state: &AppState, area: Rect) {
     } else {
         draw_ports_flat(f, state, chunks[1]);
     }
+    draw_port_detail(f, state, chunks[2]);
+}
+
+/// Full detail for the selected port group, including the untruncated working directory.
+fn draw_port_detail(f: &mut Frame, state: &AppState, area: Rect) {
+    let p = state.palette;
+    let mut lines = Vec::new();
+    if state.ports_grouped {
+        if let Some(g) = state.selected_port_group() {
+            let pid = g
+                .pid
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "—".to_string());
+            lines.push(Line::from(vec![
+                Span::styled(
+                    g.label(),
+                    Style::default().fg(p.text).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(format!("  pid {pid}  "), Style::default().fg(p.dim)),
+                Span::styled(g.scopes(), Style::default().fg(p.dim)),
+                Span::styled(
+                    format!("  {} sockets", g.count()),
+                    Style::default().fg(p.dim),
+                ),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("cwd ", Style::default().fg(p.dim)),
+                Span::styled(
+                    g.cwd.clone().unwrap_or_else(|| "—".to_string()),
+                    Style::default().fg(p.text),
+                ),
+            ]));
+        }
+    } else if let Some(s) = state.selected_port() {
+        lines.push(Line::from(vec![
+            Span::styled(
+                format!("{} {}", s.proto, s.endpoint()),
+                Style::default().fg(p.text).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!(
+                    "  {}  pid {}",
+                    s.comm.as_deref().unwrap_or("—"),
+                    s.pid.map(|v| v.to_string()).unwrap_or_else(|| "—".into())
+                ),
+                Style::default().fg(p.dim),
+            ),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("cwd ", Style::default().fg(p.dim)),
+            Span::styled(
+                s.cwd.clone().unwrap_or_else(|| "—".to_string()),
+                Style::default().fg(p.text),
+            ),
+        ]));
+    }
+    if lines.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "no selection",
+            Style::default().fg(p.dim),
+        )));
+    }
+    f.render_widget(Paragraph::new(lines).wrap(Wrap { trim: true }), area);
 }
 
 fn scope_style(addr: &str, p: &crate::theme_map::Palette) -> (&'static str, Color) {
@@ -1337,13 +1404,14 @@ fn draw_ports_grouped(f: &mut Frame, state: &AppState, area: Rect) {
         );
         return;
     }
+    let selected_idx = state.selected_port_index(&groups).unwrap_or(0);
     let mut rows: Vec<Row> = Vec::new();
     let mut selected_row: Option<usize> = None;
     for (gi, g) in groups.iter().enumerate() {
-        if gi == state.ports_selected {
+        if gi == selected_idx {
             selected_row = Some(rows.len());
         }
-        let selected = gi == state.ports_selected;
+        let selected = gi == selected_idx;
         let scope_color = if g.all_ifaces > 0 {
             p.crit
         } else if g.iface > 0 {
@@ -1367,10 +1435,7 @@ fn draw_ports_grouped(f: &mut Frame, state: &AppState, area: Rect) {
         ];
         if wide {
             cells.push(Cell::from(Line::from(
-                g.cwd
-                    .as_deref()
-                    .map(|d| trunc(d, 40))
-                    .unwrap_or_else(|| "—".to_string()),
+                g.cwd.clone().unwrap_or_else(|| "—".to_string()),
             )));
         }
         let mut row = Row::new(cells);
@@ -1506,10 +1571,7 @@ fn draw_ports_flat(f: &mut Frame, state: &AppState, area: Rect) {
             ];
             if wide {
                 cells.push(Cell::from(Line::from(
-                    s.cwd
-                        .as_deref()
-                        .map(|d| trunc(d, 44))
-                        .unwrap_or_else(|| "—".to_string()),
+                    s.cwd.clone().unwrap_or_else(|| "—".to_string()),
                 )));
             }
             Row::new(cells)

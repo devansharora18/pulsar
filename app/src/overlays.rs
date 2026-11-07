@@ -53,7 +53,12 @@ fn draw_confirm(f: &mut Frame, state: &AppState, area: Rect) {
     // Size the box from the wrapped detail so the action row can never be clipped.
     let width = 78.min(area.width.saturating_sub(4)).max(40);
     let inner_w = width.saturating_sub(4).max(20) as usize;
-    let detail_lines = pending.detail.chars().count().div_ceil(inner_w).max(1) as u16;
+    let detail_lines: u16 = pending
+        .detail
+        .lines()
+        .map(|l| l.chars().count().div_ceil(inner_w).max(1) as u16)
+        .sum::<u16>()
+        .max(1);
     let height = (8 + detail_lines).min(area.height.saturating_sub(2)).max(8);
     let box_area = centered(area, width, height);
     f.render_widget(Clear, box_area);

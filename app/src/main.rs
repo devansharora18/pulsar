@@ -170,12 +170,11 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
                 return;
             }
             KeyCode::Char('g') => {
-                state.ports_selected = 0;
+                state.select_first_port();
                 return;
             }
             KeyCode::Char('G') => {
-                let count = state.port_row_count();
-                state.ports_selected = count.saturating_sub(1);
+                state.select_last_port();
                 return;
             }
             KeyCode::Enter => {
@@ -185,6 +184,7 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
             KeyCode::Char('u') => {
                 state.ports_grouped = !state.ports_grouped;
                 state.ports_selected = 0;
+                state.ports_selected_key = None;
                 return;
             }
             KeyCode::Char('x') => {
@@ -266,13 +266,17 @@ fn kill_selected_port(state: &mut AppState) {
             return;
         }
         let name = g.name.clone();
-        let ports = g.ports(40);
+        let pid = g.pid.map(|p| p.to_string()).unwrap_or_else(|| "?".into());
+        let ports = g.ports(120);
+        let cwd = g.cwd.clone().unwrap_or_else(|| "—".into());
         (
             pids,
-            format!("{name} · {} socket(s)", g.count()),
+            format!("{name} (pid {pid}) · {} socket(s)", g.count()),
             format!(
-                "Send SIGTERM to {name}, which owns {} socket(s) on port(s) {ports}, then \
-                 SIGKILL survivors after 3s.",
+                "Send SIGTERM to {name} (pid {pid}), which owns {} socket(s).\n\
+                 ports: {ports}\n\
+                 cwd: {cwd}\n\
+                 Survivors get SIGKILL after 3s.",
                 g.count()
             ),
         )
@@ -289,12 +293,14 @@ fn kill_selected_port(state: &mut AppState) {
             return;
         };
         let name = comm.unwrap_or_else(|| "?".to_string());
+        let cwd = s.cwd.clone().unwrap_or_else(|| "—".into());
         (
             vec![pid],
             format!("{name} (pid {pid}) · {proto}:{port}"),
             format!(
-                "Send SIGTERM to {name} (pid {pid}), which owns {proto} port {port}, then \
-                 SIGKILL survivors after 3s."
+                "Send SIGTERM to {name} (pid {pid}), which owns {proto} port {port}.\n\
+                 cwd: {cwd}\n\
+                 Survivors get SIGKILL after 3s."
             ),
         )
     };

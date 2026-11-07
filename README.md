@@ -67,8 +67,10 @@ are not split across processes); the Power view reconciles the two explicitly.
   baseline / GPU / battery), top consumers, cumulative Wh.
 - **Ports** (`5`): listening TCP and bound UDP sockets, with protocol, local address, state,
   owning process and PID, working directory, and whether the bind is exposed on all
-  interfaces or localhost. Sockets with no owning process are shown as `—` rather than
-  guessed.
+  interfaces or localhost. Rows are ordered by process and the selection is anchored to
+  the process (not the row index), so socket counts changing cannot move a row under the
+  cursor; the selected group's full working directory is shown in the detail bar. Sockets
+  with no owning process are shown as `—` rather than guessed.
 
 ## Controls
 
