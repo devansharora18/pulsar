@@ -1,46 +1,46 @@
- PULSAR  │ cpu 5.3% │ mem 23.9 GB │ ⚡  7.4 W │ 636 procs                                                                              AMD Ryzen AI 7 350 w/ Radeon 860M
-  1 ◱ Overview  │  2 ≡ Processes  │  3 ▦ Memory  │  4 ⚡  Power  │  5 ⇄ Ports
- view:group  sort:Memory ▼  groups:433
+ PULSAR  │ cpu 5.8% │ mem 24.0 GB │ ⚡  8.2 W │ 631 procs                                                                              AMD Ryzen AI 7 350 w/ Radeon 860M
+  1 ◱ Overview  │  2 ≡ Processes  │  3 ▦ Memory  │  4 ⚡  Power  │  5 ⇄ Ports  │  6 ⚙ Settings
+ view:group  sort:Memory ▼  groups:430
 ╭ Processes ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Name                                N         CPU       Memory     Disk   Power    PID                                                                               │
-│ Zen Browser                        58    5% ▎     4.6 GB █████  41.5 GB   95 mW 307272                                                                               │
+│ Zen Browser                        58    7% ▍     4.7 GB █████  42.0 GB  130 mW 307272                                                                               │
 │   ├─ bwrap                                      · 1.0 KB         4.0 KB       · 307272                                                                               │
 │   ├─ bwrap                                      · 6.0 KB         8.0 KB       · 307294                                                                               │
 │   ├─ xdg-dbus-proxy                             · 309 KB         688 KB       · 307303                                                                               │
 │   ├─ bwrap                                      · 6.0 KB         4.0 KB       · 307309                                                                               │
-│   ├─ zen                                        · 371 MB ▍      29.8 GB       · 307319                                                                               │
+│   ├─ zen                                 2% ▏     398 MB ▍      30.0 GB   32 mW 307319                                                                               │
 │   ├─ forkserver                                 · 163 KB         227 MB       · 307419                                                                               │
-│   ├─ Socket Process                      2% ▏     988 KB         2.8 MB   32 mW 307423                                                                               │
-│   ├─ Privileged Cont                            · 1.5 MB        80.2 MB       · 307439                                                                               │
-│   ├─ RDD Process                                · 1.1 MB         387 MB       · 307447                                                                               │
-│   ├─ Web Content                                · 1.5 MB        18.3 MB       · 307513                                                                               │
-│   ├─ WebExtensions                              · 184 MB ▎       1.0 GB       · 307582                                                                               │
+│   ├─ Socket Process                             · 988 KB         2.8 MB       · 307423                                                                               │
+│   ├─ Privileged Cont                            · 1.6 MB        80.3 MB       · 307439                                                                               │
+│   ├─ RDD Process                                · 1.1 MB         388 MB       · 307447                                                                               │
+│   ├─ Web Content                                · 2.1 MB        18.9 MB       · 307513                                                                               │
+│   ├─ WebExtensions                              · 211 MB ▎       1.0 GB       · 307582                                                                               │
 │   ├─ Utility Process                            · 2.1 MB        45.3 MB       · 307633                                                                               │
-│   ├─ Isolated Web Co                            · 3.5 MB        44.9 MB       · 308231                                                                               │
-│   ├─ Isolated Servic                            · 2.7 MB        55.2 MB       · 312601                                                                               │
-│   ├─ Isolated Web Co                            · 669 MB ▊       1.1 GB       · 312744                                                                               │
-│   ├─ Isolated Web Co                            · 1.5 MB        15.4 MB       · 313170                                                                               │
-│   ├─ Isolated Web Co                            · 8.8 MB ▏       390 MB       · 313401                                                                               │
-│   ├─ Isolated Web Co                            · 265 MB ▎       1.3 GB       · 351609                                                                               │
-│   ├─ Isolated Web Co                            · 6.9 MB        97.2 MB       · 351945                                                                               │
-│   ├─ Isolated Web Co                            · 182 MB ▎       427 MB       · 398857                                                                               │
-│   ├─ Isolated Web Co                            · 7.7 MB         182 MB       · 398927                                                                               │
-│   ├─ Isolated Web Co                            · 5.9 MB         214 MB       · 399013                                                                               │
-│   ├─ Isolated Web Co                            · 843 MB ▉       1.6 GB       · 401400                                                                               │
-│   ├─ Isolated Web Co                            · 7.4 MB        49.1 MB       · 412779                                                                               │
-│   ├─ Isolated Web Co                            · 4.7 MB        50.3 MB       · 412784                                                                               │
-│   ├─ Isolated Web Co                            · 2.9 MB        32.6 MB       · 566963                                                                               │
-│   ├─ Isolated Web Co                            · 2.3 MB        26.8 MB       · 574166                                                                               │
-│   ├─ Isolated Web Co                            · 2.7 MB        13.6 MB       · 574171                                                                               │
-│   ├─ Isolated Web Co                            · 9.1 MB         146 MB       · 631712                                                                               │
-│   ├─ Isolated Web Co                            · 5.7 MB         136 MB       · 640986                                                                               │
-│   ├─ Isolated Web Co                            · 1.6 MB         118 MB       · 679851                                                                               │
-│   ├─ Isolated Web Co                            · 3.5 MB        39.9 MB       · 680263                                                                               │
-│   ├─ Isolated Web Co                            · 107 MB ▏       195 MB       · 689994                                                                               │
-│   ├─ Isolated Web Co                            · 187 MB ▎       662 MB       · 755393                                                                               │
-│   ├─ Isolated Web Co                            · 3.0 MB         9.3 MB       · 755793                                                                               │
-│   ├─ Isolated Web Co                            · 3.1 MB        12.4 MB       · 755838                                                                               │
+│   ├─ Isolated Web Co                            · 3.8 MB        45.1 MB       · 308231                                                                               │
+│   ├─ Isolated Servic                            · 2.9 MB        55.6 MB       · 312601                                                                               │
+│   ├─ Isolated Web Co                            · 686 MB ▊       1.1 GB       · 312744                                                                               │
+│   ├─ Isolated Web Co                            · 2.1 MB        16.1 MB       · 313170                                                                               │
+│   ├─ Isolated Web Co                            · 9.1 MB         390 MB       · 313401                                                                               │
+│   ├─ Isolated Web Co                     2% ▏     267 MB ▎       1.3 GB   32 mW 351609                                                                               │
+│   ├─ Isolated Web Co                            · 7.1 MB        97.3 MB       · 351945                                                                               │
+│   ├─ Isolated Web Co                            · 186 MB ▎       431 MB       · 398857                                                                               │
+│   ├─ Isolated Web Co                            · 8.4 MB         183 MB       · 398927                                                                               │
+│   ├─ Isolated Web Co                            · 6.3 MB         215 MB       · 399013                                                                               │
+│   ├─ Isolated Web Co                            · 842 MB ▉       1.6 GB       · 401400                                                                               │
+│   ├─ Isolated Web Co                            · 7.7 MB        49.5 MB       · 412779                                                                               │
+│   ├─ Isolated Web Co                            · 5.1 MB        50.7 MB       · 412784                                                                               │
+│   ├─ Isolated Web Co                            · 3.1 MB        32.8 MB       · 566963                                                                               │
+│   ├─ Isolated Web Co                            · 2.7 MB        27.3 MB       · 574166                                                                               │
+│   ├─ Isolated Web Co                            · 2.9 MB        13.8 MB       · 574171                                                                               │
+│   ├─ Isolated Web Co                            · 0.6 MB         146 MB       · 631712                                                                               │
+│   ├─ Isolated Web Co                            · 9.5 MB         152 MB       · 640986                                                                               │
+│   ├─ Isolated Web Co                            · 1.9 MB         118 MB       · 679851                                                                               │
+│   ├─ Isolated Web Co                            · 3.1 MB        40.3 MB       · 680263                                                                               │
+│   ├─ Isolated Web Co                            · 5.9 MB ▏       197 MB       · 689994                                                                               │
+│   ├─ Isolated Web Co                            · 189 MB ▎       662 MB       · 755393                                                                               │
+│   ├─ Isolated Web Co                            · 5.3 MB        11.8 MB       · 755793                                                                               │
+│   ├─ Isolated Web Co                            · 3.5 MB        12.9 MB       · 755838                                                                               │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
  Zen Browser (58)   58 pids  k kill  t term  z stop  u cont  +/- nice  o open  p pin  /usr/bin/bwrap
 
-1-5 views  / search  j/k move  enter expand  x kill  ? help  q quit
+1-5 views  / search  j/k move  enter expand  x kill  s / 6 settings  ? help  q quit

@@ -12,7 +12,7 @@ use pulsar_core::group::{Group, ProcSample};
 
 use crate::format::{human_bytes, human_kb, human_rate, human_temp, human_watts, pct};
 use crate::graph::{bar_spans, braille_area};
-use crate::state::{AppState, View, ViewMode};
+use crate::state::{AppState, Overlay, View, ViewMode};
 use crate::theme_map::blend;
 use crate::treemap::squarify;
 
@@ -114,11 +114,13 @@ fn draw_header(f: &mut Frame, state: &AppState, area: Rect) {
 
 fn draw_tabs(f: &mut Frame, state: &AppState, area: Rect) {
     let p = state.palette;
-    let titles: Vec<Line> = View::all()
+    // Icons are a nicety; drop them on narrow terminals so all tabs fit.
+    let show_icons = state.config.nerd_icons && area.width >= 110;
+    let mut titles: Vec<Line> = View::all()
         .iter()
         .enumerate()
         .map(|(i, v)| {
-            let label = if state.config.nerd_icons {
+            let label = if show_icons {
                 format!("{} {}", v.icon(), v.label())
             } else {
                 v.label().to_string()
@@ -130,10 +132,27 @@ fn draw_tabs(f: &mut Frame, state: &AppState, area: Rect) {
             ])
         })
         .collect();
-    let selected = View::all()
-        .iter()
-        .position(|v| *v == state.view)
-        .unwrap_or(0);
+    titles.push(Line::from(vec![
+        Span::styled(" 6 ", Style::default().fg(p.dim)),
+        Span::styled(
+            if show_icons {
+                "⚙ Settings"
+            } else {
+                "Settings"
+            },
+            Style::default().fg(p.dim),
+        ),
+        Span::styled(" ", Style::default()),
+    ]));
+
+    let selected = if state.overlay == Some(Overlay::Settings) {
+        View::all().len()
+    } else {
+        View::all()
+            .iter()
+            .position(|v| *v == state.view)
+            .unwrap_or(0)
+    };
     let tabs = Tabs::new(titles)
         .select(selected)
         .style(Style::default().fg(p.dim).bg(p.base))
@@ -153,22 +172,28 @@ fn draw_footer(f: &mut Frame, state: &AppState, area: Rect) {
     } else {
         let key = Style::default().fg(p.text);
         let act = Style::default().fg(p.dim);
-        Line::from(vec![
+        let compact = area.width < 100;
+        let mut spans = vec![
             Span::styled("1-5", key),
             Span::styled(" views  ", act),
             Span::styled("/", key),
             Span::styled(" search  ", act),
             Span::styled("j/k", key),
             Span::styled(" move  ", act),
-            Span::styled("enter", key),
-            Span::styled(" expand  ", act),
-            Span::styled("x", key),
-            Span::styled(" kill  ", act),
-            Span::styled("?", key),
-            Span::styled(" help  ", act),
-            Span::styled("q", key),
-            Span::styled(" quit", act),
-        ])
+        ];
+        if !compact {
+            spans.push(Span::styled("enter", key));
+            spans.push(Span::styled(" expand  ", act));
+        }
+        spans.push(Span::styled("x", key));
+        spans.push(Span::styled(" kill  ", act));
+        spans.push(Span::styled("s / 6", key));
+        spans.push(Span::styled(" settings  ", act));
+        spans.push(Span::styled("?", key));
+        spans.push(Span::styled(" help  ", act));
+        spans.push(Span::styled("q", key));
+        spans.push(Span::styled(" quit", act));
+        Line::from(spans)
     };
     f.render_widget(
         Paragraph::new(line).style(Style::default().bg(p.base)),

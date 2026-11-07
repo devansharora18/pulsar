@@ -210,6 +210,7 @@ fn handle_key(state: &mut AppState, k: KeyEvent) {
         KeyCode::Char('3') => state.view = View::Memory,
         KeyCode::Char('4') => state.view = View::Power,
         KeyCode::Char('5') => state.view = View::Ports,
+        KeyCode::Char('6') => state.overlay = Some(Overlay::Settings),
         KeyCode::Char('/') => {
             state.search_active = true;
             // Keep the Ports view; otherwise search means the process table.

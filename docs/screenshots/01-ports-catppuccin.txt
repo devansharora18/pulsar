@@ -1,13 +1,13 @@
- PULSAR  │ cpu 5.3% │ mem 23.9 GB │ ⚡  7.4 W │ 636 procs                                                                              AMD Ryzen AI 7 350 w/ Radeon 860M
-  1 ◱ Overview  │  2 ≡ Processes  │  3 ▦ Memory  │  4 ⚡  Power  │  5 ⇄ Ports
-listening 105  exposed 37  unowned 27   grouped  j/k move  enter expand  u group  x kill
+ PULSAR  │ cpu 5.8% │ mem 24.0 GB │ ⚡  8.2 W │ 631 procs                                                                              AMD Ryzen AI 7 350 w/ Radeon 860M
+  1 ◱ Overview  │  2 ≡ Processes  │  3 ▦ Memory  │  4 ⚡  Power  │  5 ⇄ Ports  │  6 ⚙ Settings
+listening 104  exposed 36  unowned 27   grouped  j/k move  enter expand  u group  x kill
 ╭ Open ports (grouped by process) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Process                            Ports / state                      Scope                PID Working dir                                                           │
 │ unowned ×27                        22, 53, 323, 443, 631, 5252…       all ifaces             — —                                                                     │
 │ wsdd ×27                           3702, 32928, 33786, 45336, …       all ifaces         13420 /home/devansharora18                                                  │
 │ adb ×9                             5037, 5353, 34559, 36927, 4…       all ifaces        404727 /home/devansharora18                                                  │
 │ qemu-system-x86 ×9                 5554, 5555, 8554, 33077, 34…       interface         557485 /home/devansharora18                                                  │
-│ netsimd ×7                         6402, 7681, 38059, 40479, 4…       all ifaces        557598 /home/devansharora18                                                  │
+│ netsimd ×6                         6402, 7681, 40479, 46680, 4…       all ifaces        557598 /home/devansharora18                                                  │
 │ cloudflared ×5                     20241, 33318, 33945, 34461,…       all ifaces          4106 /home/devansharora18                                                  │
 │ stremio-runtime ×5                 5353, 11470, 12470, 37197, …       all ifaces          6668 /home/devansharora18                                                  │
 │ java ×3                            34659, 35902, 44087                all ifaces       1348917 /home/devansharora18/.gradle/daemo                                    │
@@ -15,8 +15,8 @@ listening 105  exposed 37  unowned 27   grouped  j/k move  enter expand  u group
 │ dart:dartdev_ao ×2                 33787, 36747                       localhost        1219481 /home/devansharora18/Documents/Git                                    │
 │ kdeconnectd ×2                     1716                               all ifaces          4663 /home/devansharora18                                                  │
 │ github-desktop                     37277                              localhost         197189 /home/devansharora18                                                  │
-│ node                               5173                               localhost         645602 /home/devansharora18/Documents/Git                                    │
 │ node                               5174                               localhost        1066256 /home/devansharora18/Documents/Git                                    │
+│ node                               5173                               localhost         645602 /home/devansharora18/Documents/Git                                    │
 │ opencode                           62101                              localhost         643635 /home/devansharora18/Documents/Git                                    │
 │ opencode                           49374                              localhost          58627 /home/devansharora18                                                  │
 │ pasta.avx2                         8787                               localhost           1664 /                                                                     │
@@ -43,4 +43,4 @@ listening 105  exposed 37  unowned 27   grouped  j/k move  enter expand  u group
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-1-5 views  / search  j/k move  enter expand  x kill  ? help  q quit
+1-5 views  / search  j/k move  enter expand  x kill  s / 6 settings  ? help  q quit

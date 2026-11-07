@@ -1,13 +1,13 @@
- PULSAR  │ cpu 5.3% │ mem 23.9 GB │ ⚡  7.4 W │ 636 procs                                                                              AMD Ryzen AI 7 350 w/ Radeon 860M
-  1 ◱ Overview  │  2 ≡ Processes  │  3 ▦ Memory  │  4 ⚡  Power  │  5 ⇄ Ports
-listening 105  exposed 37  unowned 27   grouped  j/k move  enter expand  u group  x kill
+ PULSAR  │ cpu 5.8% │ mem 24.0 GB │ ⚡  8.2 W │ 631 procs                                                                              AMD Ryzen AI 7 350 w/ Radeon 860M
+  1 ◱ Overview  │  2 ≡ Processes  │  3 ▦ Memory  │  4 ⚡  Power  │  5 ⇄ Ports  │  6 ⚙ Settings
+listening 104  exposed 36  unowned 27   grouped  j/k move  enter expand  u group  x kill
 ╭ Open ports (grouped by process) ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Process                            Ports / state                      Scope                PID Working dir                                                           │
 │ unowned ×27                        22, 53, 323, 443, 631, 5252…       all ifaces             — —                                                                     │
 │ wsdd ×27                           3702, 32928, 33786, 45336, …       all ifaces         13420 /home/devansharora18                                                  │
 │ adb ×9                             5037, 5353, 34559, 36927, 4…       all ifaces        404727 /home/devansharora18                                                  │
 │ qemu-system-x86 ×9                 5554, 5555, 8554, 33077, 34…       interface         557485 /home/devansharora18                                                  │
-│ netsimd ×7                         6402, 7681, 38059, 40479, 4…       all ifaces        557598 /home/devansharora18                                                  │
+│ netsimd ×6                         6402, 7681, 40479, 46680, 4…       all ifaces        557598 /home/devansharora18                                                  │
 │ cloudflared ×5                     20241, 33318, 33945, 34461,…       all ifaces          4106 /home/devansharora18                                                  │
 │ stremio-runtime ×5                 5353, 11470, 12470, 37197, …       all ifaces          6668 /home/devansharora18                                                  │
 │ java ×3                            34659, 35902, 44087                all ifaces       1348917 /home/devansharora18/.gradle/daemo                                    │
@@ -15,10 +15,10 @@ listening 105  exposed 37  unowned 27   grouped  j/k move  enter expand  u group
 │ dart:dartdev_ao ×2                 33787, 3╔ Settings ══════════════════════════════════════════════════════════════════╗ents/Git                                    │
 │ kdeconnectd ×2                     1716    ║  Theme                   catppuccin-mocha    cycle                         ║                                            │
 │ github-desktop                     37277   ║  Nerd icons              on                  enter                         ║                                            │
-│ node                               5174    ║  Refresh                 100 ms              250 ms · live                 ║ents/Git                                    │
-│ node                               5173    ║  Smoothing               75%                 10% steps                     ║ents/Git                                    │
-│ opencode                           49374   ║  TDP override            auto                5 W · live                    ║                                            │
-│ opencode                           62101   ║  History                 120 samples         restart                       ║ents/Git                                    │
+│ node                               5173    ║  Refresh                 100 ms              250 ms · live                 ║ents/Git                                    │
+│ node                               5174    ║  Smoothing               75%                 10% steps                     ║ents/Git                                    │
+│ opencode                           62101   ║  TDP override            auto                5 W · live                    ║ents/Git                                    │
+│ opencode                           49374   ║  History                 120 samples         restart                       ║                                            │
 │ pasta.avx2                         8787    ║  Hide kernel threads     off                 enter                         ║                                            │
 │ python3                            8099    ║  Confirm destructive     on                  enter                         ║ents/Git                                    │
 │                                            ║  Save config                                 enter                         ║                                            │
@@ -43,4 +43,4 @@ listening 105  exposed 37  unowned 27   grouped  j/k move  enter expand  u group
 │                                                                                                                                                                      │
 │                                                                                                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-1-5 views  / search  j/k move  enter expand  x kill  ? help  q quit
+1-5 views  / search  j/k move  enter expand  x kill  s / 6 settings  ? help  q quit
