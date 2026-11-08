@@ -1,22 +1,17 @@
 # Screenshots
 
-Generated headlessly with Pulsar's `--dump` mode (no compositor screen-capture API needed):
+Six captures in **Rosé Pine**: overview, processes (grouped + expanded), memory (stacked bar
+and treemap), power, ports (grouped by process), and the settings panel.
+
+They are rendered headlessly — no compositor capture needed:
 
 ```sh
-PULSAR_DUMP_THEMES="catppuccin-mocha,tokyo-night" \
-  pulsar --dump docs/screenshots --png
+PULSAR_DUMP_SIZE=180x48 PULSAR_DUMP_THEMES=rose-pine \
+  pulsar --dump /tmp/pulsar-shots --png
 ```
 
-Each view is written as a plain-text render (`.txt`) and a coloured PNG (`.png`).
+The dump writes `<index>-<view>-<theme>.png` / `.txt`; the files here are those captures
+renamed to `overview.png`, `processes.png`, `memory.png`, `power.png`, `ports.png` and
+`settings.png`.
 
-| Prefix | Theme |
-|---|---|
-| `01-*` | Catppuccin Mocha |
-| `02-*` | Tokyo Night |
-
-Views: `overview`, `processes` (grouped + expanded), `memory` (stacked bar + treemap),
-`power`, `ports` (grouped by process), and `settings` (the in-TUI settings panel).
-
-The `processes` captures on this box show Zen Browser folding 32 helper processes (Web
-Content, Privileged Cont, WebExtensions, Isolated Web Co, …) under one row, and three
-`opencode` processes as one `opencode (3)` row.
+Each view also has a plain-text render available from the same command (without `--png`).

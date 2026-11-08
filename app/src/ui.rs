@@ -476,6 +476,14 @@ fn draw_sensors(f: &mut Frame, state: &AppState, area: Rect) {
             width: inner.width,
             height: inner.bottom() - graph_top - 1,
         };
+        let tmax = s
+            .series
+            .cpu_temp
+            .iter()
+            .copied()
+            .fold(0.0_f64, f64::max)
+            .max(45.0)
+            * 1.15;
         draw_area(
             f.buffer_mut(),
             graph,
@@ -483,7 +491,7 @@ fn draw_sensors(f: &mut Frame, state: &AppState, area: Rect) {
             tcolor,
             blend(tcolor, p.base, 0.88),
             blend(tcolor, p.text, 0.30),
-            100.0,
+            tmax,
             false,
         );
     }

@@ -11,7 +11,7 @@
 
 <br>
 
-<img src="docs/screenshots/01-overview-catppuccin.png" alt="Pulsar overview" width="900">
+<img src="docs/screenshots/overview.png" alt="Pulsar overview" width="900">
 
 <br>
 
@@ -35,12 +35,15 @@ GNOME System Monitor and Resources disagree with themselves. The header says 10.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/01-processes-catppuccin.png" alt="Processes"><br><sub><b>2 · Processes</b> — grouped / flat / tree, sortable, expandable</sub></td>
-<td width="50%"><img src="docs/screenshots/01-memory-catppuccin.png" alt="Memory"><br><sub><b>3 · Memory</b> — reconciliation panels and treemap by app</sub></td>
+<td width="50%"><img src="docs/screenshots/processes.png" alt="Processes"><br><sub><b>2 · Processes</b> — grouped / flat / tree, sortable, expandable</sub></td>
+<td width="50%"><img src="docs/screenshots/memory.png" alt="Memory"><br><sub><b>3 · Memory</b> — reconciliation panels and treemap by app</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/01-power-catppuccin.png" alt="Power"><br><sub><b>4 · Power</b> — system watts, breakdown, top consumers</sub></td>
-<td width="50%"><img src="docs/screenshots/01-ports-catppuccin.png" alt="Ports"><br><sub><b>5 · Ports</b> — listening sockets by process, exposure at a glance</sub></td>
+<td width="50%"><img src="docs/screenshots/power.png" alt="Power"><br><sub><b>4 · Power</b> — system watts, breakdown, top consumers</sub></td>
+<td width="50%"><img src="docs/screenshots/ports.png" alt="Ports"><br><sub><b>5 · Ports</b> — listening sockets by process, exposure at a glance</sub></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><img src="docs/screenshots/settings.png" alt="Settings" width="900"><br><sub><b>6 · Settings</b> — theme and config, applied live</sub></td>
 </tr>
 </table>
 
@@ -54,6 +57,16 @@ GNOME System Monitor and Resources disagree with themselves. The header says 10.
 | 6 | **Settings** | Theme, refresh, smoothing, TDP override, history and more, all live |
 
 ## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/devansharora18/pulsar/main/install.sh | sh
+```
+
+That fetches the repo, builds with Cargo, and installs `pulsar` into `~/.cargo/bin`. It needs
+Linux and a Rust toolchain; the script stops with a pointer to <https://rustup.rs> if `cargo`
+is missing.
+
+From a local checkout instead:
 
 ```sh
 git clone https://github.com/devansharora18/pulsar

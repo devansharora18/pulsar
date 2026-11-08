@@ -82,7 +82,8 @@ pub fn run(dir: PathBuf, png: bool, mut rx: watch::Receiver<SystemSnapshot>) {
             let _ = vi;
         }
 
-        // Settings panel capture.
+        // Settings panel capture (Overview behind it, dimmed).
+        state.view = View::Overview;
         state.overlay = Some(crate::state::Overlay::Settings);
         state.settings_cursor = 0;
         let mut terminal =
