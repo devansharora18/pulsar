@@ -15,8 +15,6 @@
 
 <br>
 
-`~7 MB RSS` · `~1.8 MB binary` · `570 processes @ 1 Hz` · `no webview, no GUI toolkit`
-
 </div>
 
 ---
@@ -62,9 +60,14 @@ GNOME System Monitor and Resources disagree with themselves. The header says 10.
 curl -fsSL https://raw.githubusercontent.com/devansharora18/pulsar/main/install.sh | sh
 ```
 
-That fetches the repo, builds with Cargo, and installs `pulsar` into `~/.cargo/bin`. It needs
-Linux and a Rust toolchain; the script stops with a pointer to <https://rustup.rs> if `cargo`
-is missing.
+That fetches the repo, builds with Cargo, and installs `pulsar` into `~/.cargo/bin` — or
+`~/.local/bin` if that is already on your `PATH`. If neither directory is on `PATH`, the
+installer appends the chosen one to your shell rc (bash, zsh, fish or profile) and tells you
+to open a new terminal. A piped installer cannot modify the current shell's `PATH`; it
+persists it for the next shell.
+
+It needs Linux and a Rust toolchain; the script stops with a pointer to
+<https://rustup.rs> if `cargo` is missing.
 
 From a local checkout instead:
 
